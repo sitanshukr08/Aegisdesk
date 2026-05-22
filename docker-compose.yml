@@ -15,6 +15,7 @@ services:
       - LLM_PROVIDER=${LLM_PROVIDER:-groq}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change_this_in_production}
       - MAX_TOOL_RECURSION=${MAX_TOOL_RECURSION:-5}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
     volumes:
       # Persist ChromaDB Vector Store
       - ./chroma_db:/code/chroma_db
@@ -29,3 +30,14 @@ services:
     cap_add:
       - NET_RAW        # Required for ping / ICMP
       - NET_ADMIN      # Required for interface enumeration
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: aegisdesk_jaeger
+    ports:
+      - "16686:16686" # Web UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: unless-stopped
