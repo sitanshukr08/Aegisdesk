@@ -1,6 +1,6 @@
 from app.db.vector_store import get_db
 from app.config.settings import settings
-from sentence_transformers import CrossEncoder
+from fastembed.rerank.cross_encoder import TextCrossEncoder
 import numpy as np
 from app.memory.graph_store import graph_db
 from src.aegisdesk.observability.logger import get_logger
@@ -8,7 +8,7 @@ import asyncio
 
 logger = get_logger("aegisdesk.retriever")
 
-reranker = CrossEncoder('BAAI/bge-reranker-base', max_length=512)
+reranker = TextCrossEncoder(model_name='BAAI/bge-reranker-base')
 
 async def get_context(user_id: str, original_q: str, expanded_q: str):
     try:
@@ -31,11 +31,10 @@ async def get_context(user_id: str, original_q: str, expanded_q: str):
                 return user_memory, 0.90
             return "", 0.0
             
-        pairs = [[expanded_q, text] for text in unique_texts]
-        # CRITICAL FIX: Offload heavy PyTorch inference to a worker thread!
-        raw_scores = await asyncio.to_thread(reranker.predict, pairs)
+        # CRITICAL FIX: Offload heavy ONNX inference to a worker thread!
+        raw_scores = await asyncio.to_thread(lambda: list(reranker.rerank(expanded_q, unique_texts)))
         
-        probabilities = 1 / (1 + np.exp(-raw_scores))
+        probabilities = 1 / (1 + np.exp(-np.array(raw_scores)))
         
         scored_docs = list(zip(unique_texts, probabilities))
         scored_docs.sort(key=lambda x: x[1], reverse=True)
