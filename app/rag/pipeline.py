@@ -1,8 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from app.config.settings import settings
 import json
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer
 import numpy as np
 from src.aegisdesk.observability.logger import get_logger
 from src.aegisdesk.core.llm_factory import get_llm
@@ -15,30 +14,42 @@ logger = get_logger("aegisdesk.pipeline")
 # Offline Intent Vocabulary (Zero-Token Routing)
 INTENT_CLASSES = [
     {"category": "greeting", "domain": None, "keywords": "hi hello thanks hey greetings good morning afternoon"},
-    {"category": "it_support", "domain": "network_diagnostics", "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing"},
-    {"category": "it_support", "domain": "cloud_integrations", "keywords": "okta jira slack reset password unlock account ticket aws azure active directory sso login"},
+    {"category": "it_support", "domain": "network_diagnostics", "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing broken pipe gateway"},
+    {"category": "it_support", "domain": "cloud_integrations", "keywords": "okta jira slack reset password unlock account ticket aws azure active directory sso login token expired"},
     {"category": "it_support", "domain": "web_scraping", "keywords": "scrape read wiki documentation hr portal benefits policy external website url page"},
 ]
 
-vectorizer = TfidfVectorizer()
-corpus = [item["keywords"] for item in INTENT_CLASSES]
-tfidf_matrix = vectorizer.fit_transform(corpus)
+_ROUTER_MODEL: SentenceTransformer | None = None
+_INTENT_VECTORS: np.ndarray | None = None
+
+def get_router() -> tuple[SentenceTransformer, np.ndarray]:
+    global _ROUTER_MODEL, _INTENT_VECTORS
+    if _ROUTER_MODEL is None:
+        logger.info("Loading SentenceTransformer model for semantic routing...")
+        _ROUTER_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+        corpus = [item["keywords"] for item in INTENT_CLASSES]
+        _INTENT_VECTORS = _ROUTER_MODEL.encode(corpus, convert_to_numpy=True)
+    return _ROUTER_MODEL, _INTENT_VECTORS
 
 def analyze_intent(query: str, history: list) -> dict:
-    """Classifies the query offline using TF-IDF and Cosine Similarity (Zero-Token)."""
+    """Classifies the query offline using SentenceTransformer (Zero-Token)."""
     try:
         # Hardcoded direct answers
         q_lower = query.lower()
         if "who" in q_lower and ("aegisdesk" in q_lower or "made" in q_lower or "developed" in q_lower):
             return {"category": "direct_answer", "domain": None, "direct_response": "AegisDesk was developed by Sitanshu Kumar."}
             
-        # Offline Semantic Routing
-        query_vec = vectorizer.transform([q_lower])
-        similarities = cosine_similarity(query_vec, tfidf_matrix).flatten()
+        # Semantic Routing using Singleton Model
+        model, intent_vectors = get_router()
+        query_vec = model.encode([q_lower], convert_to_numpy=True)
+        
+        # Calculate cosine similarity manually since vectors are normalized by default
+        from sklearn.metrics.pairwise import cosine_similarity
+        similarities = cosine_similarity(query_vec, intent_vectors).flatten()
         best_match_idx = int(np.argmax(similarities))
         
         # Fallback if query doesn't match any known vectors strongly
-        if similarities[best_match_idx] < 0.15:
+        if similarities[best_match_idx] < 0.20:
             return {"category": "it_support", "domain": "general", "direct_response": None}
             
         match = INTENT_CLASSES[best_match_idx]

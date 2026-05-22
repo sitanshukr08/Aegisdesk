@@ -12,6 +12,9 @@ COPY requirements.txt .
 # Install Python dependencies without caching to keep image size small
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download the Semantic Router Model (22MB) so cold starts are instant
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
 # Copy application files
 COPY ./app /code/app
 
