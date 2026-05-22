@@ -2,47 +2,32 @@
 
 This roadmap tracks the evolution of AegisDesk from a RAG prototype to an Enterprise Autonomous IT Platform.
 
-## Phase 1: Architecture Foundation
+## Phase 1 - 7: Foundation & Hardening
 Status: **Completed**
-- Built foundational docs and `aegisdesk` package scaffolding.
+- CLI-first Typer setup, `AsyncSqliteSaver` persistent memory, and LLM provider abstractions.
+- Live Windows diagnostic tools (`ping`, `ipconfig`) wrapped in Human-in-the-Loop (`interrupt_before`) LangGraph safety boundaries.
+- Mock integrations (Jira, Slack, Okta) built in `integration_tools.py`.
 
-## Phase 2: CLI MVP
+## Phase 8 - 11: Swarm Architecture & RCE Mitigation
 Status: **Completed**
-- Implemented Typer CLI (`aegisdesk init`, `ingest`, `ask`, `doctor`).
+- Refactored monolithic LangGraph into specialized intent Domains (`NetworkAgent`, `CloudAgent`, `WebAgent`).
+- Implemented rigorous RCE mitigation by strictly enforcing `shell=False`, sanitizing shell metacharacters, and explicitly whitelisting subprocess executables.
+- Implemented `MAX_TOOL_RECURSION` loop detection to prevent "Denial of Wallet" attacks.
 
-## Phase 3: Persistence Upgrade
+## Phase 12 - 14: Zero-Token Routing & SSRF Defense
 Status: **Completed**
-- Migrated from JSONL/Pickle to SQLite and `AsyncSqliteSaver`.
-- Implemented continuous conversational memory inside LangGraph.
+- Implemented a local `sentence-transformers/all-MiniLM-L6-v2` Semantic Router. Intent is classified locally via embeddings without burning API tokens.
+- Secured the Web Agent against Time-Of-Check to Time-Of-Use (TOCTOU) Server-Side Request Forgery via a custom `DNSPinnedAdapter` that intercepts the HTTP socket layer.
 
-## Phase 4: Provider Abstraction
+## Phase 15 - 16: Operational Ergonomics & PyPI Readiness
 Status: **Completed**
-- Created the `LLMFactory` to seamlessly switch between OpenAI, Groq, and local models.
-
-## Phase 5: Enterprise Hardening
-Status: **Completed**
-- Introduced rotating JSON-formatted file logging (`src/aegisdesk/observability/logger.py`).
-- Silenced console noise and built comprehensive failure-recovery tests.
-
-## Phase 6: Autonomous Diagnostic Tools (HITL)
-Status: **Completed**
-- Built `src/aegisdesk/core/tools.py` with live Windows diagnostics (`ping`, `ipconfig`).
-- Intercepted the LangGraph `ToolNode` with `interrupt_before=["tools"]` to prompt users via the CLI for permission to execute OS commands.
-
-## Phase 7: Rebranding & Enterprise API Parity
-Status: **Completed**
-- Renamed the project from "DeskBot" to **AegisDesk**.
-- Connected `app/api/endpoints.py` to the new LangGraph pipeline.
-- Built mock cloud integrations (Jira, Slack, Okta) in `integration_tools.py` to allow AegisDesk to operate headlessly.
+- Shipped `docker-compose.yml` mapping persistent `~/.aegisdesk` volumes and dropping root capabilities (`cap_drop: ALL`).
+- Decoupled state from the current working directory, injected an MIT License, and prepped the CLI for PyPI deployment.
+- Proved the execution pipeline via End-to-End (`test_e2e.py`) testing.
 
 ---
 
-## Phase 8: Multi-Agent Swarms
-Status: **Planned**
-- Break the monolithic LangGraph into specialized agents (e.g. `NetworkAgent`, `HRAgent`, `AccessAgent`).
-- Implement a Supervisor node to delegate tasks.
-
-## Phase 9: React UI Dashboard
+## Phase 17: React UI Dashboard
 Status: **Planned**
 - Build a web interface that consumes the FastAPI endpoints.
 - Allow administrators to view chat histories, ticket escalations, and manually approve HITL Tool Interrupts via the UI.

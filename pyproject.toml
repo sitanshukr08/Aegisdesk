@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "CLI-first enterprise IT helpdesk assistant with RAG, memory, and escalation workflows."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Proprietary / portfolio demo until a formal license is added" }
+license = { text = "MIT License" }
 authors = [
   { name = "Sitanshu Kumar" }
 ]

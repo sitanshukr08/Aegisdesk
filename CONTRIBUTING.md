@@ -7,7 +7,7 @@ AegisDesk is moving from prototype to product in small, reviewable phases. Keep 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r pyproject.toml
 uvicorn app.main:app --reload
 ```
 

@@ -11,7 +11,7 @@ class Config:
     llm_provider = os.getenv("LLM_PROVIDER", "groq")
     llm_model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
     
-    db_path = os.getenv("CHROMA_DB_PATH", "./chroma_db")
+    db_path = os.getenv("CHROMA_DB_PATH", os.path.expanduser("~/.aegisdesk/chroma_db"))
     embed_model = os.getenv("EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
     threshold = float(os.getenv("CONFIDENCE_THRESHOLD", "0.7"))
     top_k = int(os.getenv("TOP_K", "4"))
@@ -29,8 +29,8 @@ class Config:
         if keyword.strip()
     ]
 
-    graph_memory_db_path = os.getenv("GRAPH_MEMORY_DB_PATH", "./data/graph_memory.db")
-    graph_memory_legacy_path = os.getenv("GRAPH_MEMORY_LEGACY_PATH", "./graph_memory.pkl")
+    graph_memory_db_path = os.getenv("GRAPH_MEMORY_DB_PATH", os.path.expanduser("~/.aegisdesk/data/graph_memory.db"))
+    graph_memory_legacy_path = os.getenv("GRAPH_MEMORY_LEGACY_PATH", os.path.expanduser("~/.aegisdesk/data/graph_memory.pkl"))
     memory_retention_enabled = os.getenv("MEMORY_RETENTION_ENABLED", "true").lower() == "true"
     memory_retention_days = int(os.getenv("MEMORY_RETENTION_DAYS", "90"))
     memory_retention_prune_interval_hours = int(os.getenv("MEMORY_RETENTION_PRUNE_INTERVAL_HOURS", "24"))
