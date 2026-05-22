@@ -1,0 +1,61 @@
+# Security (NEVER UPLOAD SECRETS)
+.env
+.env.local
+*.key
+*.pem
+
+# Python Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python Cache & Build
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Testing & Logs
+logs/
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local Databases & Agent Memory (Keeps your repo clean)
+data/
+chroma_db/
+graph_memory.pkl
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project Specific
+bsod.jpg
+test_policy.txt
+test.txt
+deskbot.zip
+scratch/

@@ -1,0 +1,2 @@
+# Core Domain (`src/aegisdesk/`)
+This root module defines the `aegisdesk` CLI tool alongside its foundational tool definitions. The code inside this structure is installed locally via `pip install -e .`.\n
