@@ -29,11 +29,10 @@ def get_cache_key(query: str, username: str) -> str:
 @router.post("/query")
 async def query_bot(
     request: QueryRequest, 
-    background_tasks: BackgroundTasks,
-    current_user: TokenData = Depends(get_current_user) # Secure!
+    background_tasks: BackgroundTasks
 ):
     try:
-        user_id = current_user.username
+        user_id = "default_user"
         cache_key = get_cache_key(request.query, user_id)
         
         if cache_key in RESPONSE_CACHE:

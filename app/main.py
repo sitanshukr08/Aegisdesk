@@ -11,6 +11,16 @@ app = FastAPI(
     description="Enterprise RAG-powered IT support bot with Streaming & Graph Memory."
 )
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow Vite dev server
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Register the new Auth router
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Auth"])
 

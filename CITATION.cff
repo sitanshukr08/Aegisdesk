@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+title: "AegisDesk: An Autonomous Zero-Token Semantic IT Agent"
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - given-names: "Sitanshu"
+    family-names: "Kumar"
+    email: "sitanshukr08@example.com"
+repository-code: "https://github.com/sitanshukr08/Aegisdesk"
+url: "https://pypi.org/project/aegisdesk/"
+abstract: "A deterministic, zero-token semantic routing swarm designed for zero-trust enterprise IT. Uses persistent SQLite Graph Memory, sub-5ms local embeddings, and isolated LangGraph sub-agents."
+keywords:
+  - AI
+  - LangGraph
+  - Enterprise
+  - Helpdesk
+  - Python
+date-released: 2026-05-22
+version: 0.1.5

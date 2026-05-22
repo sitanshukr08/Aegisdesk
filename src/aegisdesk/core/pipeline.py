@@ -67,14 +67,10 @@ async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_
             async for output in stream:
                 for node_name, state_update in output.items():
                     yield {"type": "status", "msg": f"Agent completed: {node_name}"}
-                    
-                    if final_state is None:
-                        final_state = state_update.copy()
-                    else:
-                        final_state.update(state_update)
 
             # Check if the graph has paused due to an interrupt
             state = await app_graph.aget_state(config)
+            final_state = state.values
             if state.next and state.next[0] == 'tools':
                 last_msg = state.values["messages"][-1]
                 tool_call = last_msg.tool_calls[0]

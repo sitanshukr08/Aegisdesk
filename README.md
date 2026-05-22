@@ -92,3 +92,18 @@ src\aegisdesk\core\web_tools.py              70     15    79%
 -------------------------------------------------------------
 TOTAL                                      1218    729    40%
 ```
+
+---
+
+## 📖 Citation
+
+If you use AegisDesk in your enterprise infrastructure or academic research, please cite the project:
+
+```bibtex
+@misc{aegisdesk,
+      title={AegisDesk: An Autonomous Zero-Token Semantic IT Agent},
+      author={Sitanshu Kumar},
+      year={2026},
+      url={https://github.com/sitanshukr08/Aegisdesk}
+}
+```
