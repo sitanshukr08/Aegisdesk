@@ -8,6 +8,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.connection import create_connection
 
 from src.aegisdesk.observability.logger import get_logger
+from app.config.settings import settings
 
 logger = get_logger("aegisdesk.web_tools")
 
@@ -103,4 +104,27 @@ def scrape_web_page(url: str, query: str) -> str:
         logger.error(f"[WEB SCRAPER] Failed to scrape {url}: {e}")
         return f"Error scraping {url}: {str(e)}"
 
-WEB_SCRAPING_TOOLS = [scrape_web_page]
+@tool
+def search_internet(query: str) -> str:
+    """Use this to search the internet for up-to-date information, news, or global facts.
+    Provide a specific search query."""
+    logger.debug(f"[WEB SEARCH] Searching internet for: {query}")
+    try:
+        if not settings.tavily_api_key:
+            return "Error: TAVILY_API_KEY is not configured."
+        
+        response = requests.post(
+            "https://api.tavily.com/search",
+            json={"api_key": settings.tavily_api_key, "query": query, "search_depth": "basic", "max_results": 3},
+            timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        results = [f"Source: {res.get('url')}\\nContent: {res.get('content')}" for res in data.get('results', [])]
+        return "\\n\\n".join(results) if results else "No relevant results found."
+    except Exception as e:
+        logger.error(f"[WEB SEARCH] Failed: {e}")
+        return f"Error searching internet: {str(e)}"
+
+WEB_SCRAPING_TOOLS = [scrape_web_page, search_internet]

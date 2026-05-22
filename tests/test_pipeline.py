@@ -20,8 +20,7 @@ def test_analyze_intent_fallback():
     assert res["category"] == "it_support"
 
 def test_analyze_intent_hardcoded_direct():
-    """Test the direct answer bypass."""
+    """Test the authorship query delegation."""
     res = analyze_intent("Who developed AegisDesk?", [])
-    assert res["category"] == "direct_answer"
-    assert res["direct_response"] is not None
-
+    assert res["category"] == "it_support"
+    assert res["domain"] == "web_scraping"

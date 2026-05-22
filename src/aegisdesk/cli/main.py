@@ -233,6 +233,10 @@ def tickets_list():
             t = json.loads(line.strip())
             console.print(f"🎫 [bold]{t['ticket_id']}[/bold] | Status: [yellow]{t['status']}[/yellow] | Issue: [dim]{t['issue_description']}[/dim]")
 
+@app.command()
+def author():
+    """Show the author/creator of AegisDesk."""
+    console.print("[bold cyan]AegisDesk[/bold cyan] was created by [bold magenta]sitanshukr08[/bold magenta].")
 
 
 if __name__ == "__main__":

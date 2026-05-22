@@ -36,8 +36,8 @@ def analyze_intent(query: str, history: list) -> dict:
     try:
         # Hardcoded direct answers
         q_lower = query.lower()
-        if "who" in q_lower and ("aegisdesk" in q_lower or "made" in q_lower or "developed" in q_lower):
-            return {"category": "direct_answer", "domain": None, "direct_response": "AegisDesk was developed by Sitanshu Kumar."}
+        if "who" in q_lower and ("aegisdesk" in q_lower or "made" in q_lower or "developed" in q_lower or "created" in q_lower or "author" in q_lower):
+            return {"category": "it_support", "domain": "web_scraping", "direct_response": None}
             
         # Semantic Routing using Singleton Model
         model, intent_vectors = get_router()
@@ -112,7 +112,7 @@ def get_web_answer(query: str, context: str, history: list):
     try:
         llm = get_llm(temperature=0.0).bind_tools(WEB_SCRAPING_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Web Research Agent. Use your web scraper to read internal wikis or external links to solve the user's problem."),
+            ("system", "You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem."),
             MessagesPlaceholder(variable_name="history")
         ])
         return (prompt | llm).invoke({"history": history})
