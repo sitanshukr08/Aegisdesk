@@ -123,8 +123,14 @@ def get_general_answer(query: str, context: str, history: list):
     """General Knowledge Sub-Agent (No Tools)"""
     try:
         llm = get_llm(temperature=0.0)
+        sys_msg = """You are the AegisDesk IT Assistant. 
+You must answer the user's query strictly using ONLY the provided context.
+If the context does not contain the answer or is irrelevant, explicitly state that you do not have that information in your knowledge base. Do not hallucinate or use outside knowledge.
+
+Context:
+{context}"""
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk IT Assistant. Answer using this context: {context}"),
+            ("system", sys_msg),
             MessagesPlaceholder(variable_name="history")
         ])
         return (prompt | llm).invoke({"context": context, "history": history})
