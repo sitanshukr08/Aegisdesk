@@ -15,8 +15,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY ./app /code/app
 
-# Ensure data and db directories exist
-RUN mkdir -p /code/data /code/chroma_db
+# Ensure data and db directories exist and are owned by the new user
+RUN mkdir -p /code/data /code/chroma_db && \
+    useradd -m aegis && \
+    chown -R aegis:aegis /code
+
+USER aegis
 
 EXPOSE 8000
 

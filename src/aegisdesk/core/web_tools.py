@@ -19,9 +19,15 @@ def is_safe_url(url: str) -> bool:
         ip = socket.gethostbyname(hostname)
         ip_obj = ipaddress.ip_address(ip)
         
-        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_unspecified or ip_obj.is_multicast:
             logger.warning(f"SSRF Alert: Blocked attempt to scrape internal IP {ip}")
             return False
+            
+        # Hard block 0.0.0.0 specifically as some OSs route it to localhost
+        if str(ip_obj) == "0.0.0.0" or str(ip_obj) == "::":
+            logger.warning(f"SSRF Alert: Blocked attempt to scrape 0.0.0.0 / ::")
+            return False
+            
         return True
     except Exception as e:
         logger.error(f"URL resolution failed: {e}")

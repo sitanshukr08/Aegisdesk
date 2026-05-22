@@ -126,8 +126,9 @@ def route_after_generation(state: AgentState):
     if messages and hasattr(messages[-1], "tool_calls") and messages[-1].tool_calls:
         # Check for Denial of Wallet / Infinite Looping
         tool_call_count = sum(1 for m in messages if getattr(m, "type", "") == "tool")
-        if tool_call_count >= 3:
-            logger.warning("[SECURITY] Agent stuck in tool loop (Denial of Wallet). Forcing escalation.")
+        max_loops = int(os.getenv("MAX_TOOL_RECURSION", "5"))
+        if tool_call_count >= max_loops:
+            logger.warning(f"[SECURITY] Agent hit tool loop limit ({max_loops}). Forcing escalation.")
             return "escalate"
         return "tools"
         

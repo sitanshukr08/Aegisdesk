@@ -1,5 +1,6 @@
 import httpx
 import asyncio
+import os
 
 async def test_security():
     base_url = "http://127.0.0.1:8000/api/v1"
@@ -10,7 +11,7 @@ async def test_security():
         print(f"Status: {res.status_code} (Expected 401 Unauthorized)")
         
         print("\n--- 2. Logging in as Standard User (Aryan) ---")
-        login_res = await client.post(f"{base_url}/auth/login", data={"username": "aryan", "password": "password123"})
+        login_res = await client.post(f"{base_url}/auth/login", data={"username": "aryan", "password": os.getenv("TEST_USER_PASSWORD", "dummy_pass")})
         aryan_token = login_res.json().get("access_token")
         print(f"Obtained JWT Token: {aryan_token[:20]}...")
         
@@ -21,7 +22,7 @@ async def test_security():
         print(f"Status: {res.status_code} (Expected 403 Forbidden)")
         
         print("\n--- 4. Logging in as Admin ---")
-        login_res = await client.post(f"{base_url}/auth/login", data={"username": "admin", "password": "password123"})
+        login_res = await client.post(f"{base_url}/auth/login", data={"username": "admin", "password": os.getenv("TEST_ADMIN_PASSWORD", "dummy_admin_pass")})
         admin_token = login_res.json().get("access_token")
         
         print("\n--- 5. Testing RBAC: Admin trying to Ingest a file ---")

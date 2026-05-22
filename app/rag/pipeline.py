@@ -1,6 +1,9 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from app.config.settings import settings
 import json
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 from src.aegisdesk.observability.logger import get_logger
 from src.aegisdesk.core.llm_factory import get_llm
 from src.aegisdesk.core.tools import IT_SUPPORT_TOOLS
@@ -9,41 +12,46 @@ from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
 
 logger = get_logger("aegisdesk.pipeline")
 
-def analyze_intent(query: str, history: list) -> dict:
-    """Classifies the query using short-term memory to prevent blocking follow-ups."""
-    try:
-        recent = history[-4:] if history else []
-        history_text = "\n".join([f"{m.type}: {m.content}" for m in recent]) if recent else "No history."
-        logger.debug(f"Router history context length: {len(recent)} messages")
+# Offline Intent Vocabulary (Zero-Token Routing)
+INTENT_CLASSES = [
+    {"category": "greeting", "domain": None, "keywords": "hi hello thanks hey greetings good morning afternoon"},
+    {"category": "it_support", "domain": "network_diagnostics", "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing"},
+    {"category": "it_support", "domain": "cloud_integrations", "keywords": "okta jira slack reset password unlock account ticket aws azure active directory sso login"},
+    {"category": "it_support", "domain": "web_scraping", "keywords": "scrape read wiki documentation hr portal benefits policy external website url page"},
+]
 
-        llm = get_llm(temperature=0.0, response_format={"type": "json_object"})
-        sys_msg = f"""You are a classification router. 
-        Recent Context: {history_text}
+vectorizer = TfidfVectorizer()
+corpus = [item["keywords"] for item in INTENT_CLASSES]
+tfidf_matrix = vectorizer.fit_transform(corpus)
+
+def analyze_intent(query: str, history: list) -> dict:
+    """Classifies the query offline using TF-IDF and Cosine Similarity (Zero-Token)."""
+    try:
+        # Hardcoded direct answers
+        q_lower = query.lower()
+        if "who" in q_lower and ("aegisdesk" in q_lower or "made" in q_lower or "developed" in q_lower):
+            return {"category": "direct_answer", "domain": None, "direct_response": "AegisDesk was developed by Sitanshu Kumar."}
+            
+        # Offline Semantic Routing
+        query_vec = vectorizer.transform([q_lower])
+        similarities = cosine_similarity(query_vec, tfidf_matrix).flatten()
+        best_match_idx = int(np.argmax(similarities))
         
-        Classify the user's latest input.
-        Categories:
-        - "greeting": "hi", "hello", "thanks"
-        - "direct_answer": Questions that can be fully answered using the Recent Context. ALSO, if asked "who made aegisdesk" or "who developed you", ALWAYS output "AegisDesk was developed by Sitanshu Kumar".
-        - "out_of_scope": Completely unrelated general knowledge.
-        - "escalate": User is angry or asking for a human.
-        - "it_support": IT issues, troubleshooting, HR portals.
+        # Fallback if query doesn't match any known vectors strongly
+        if similarities[best_match_idx] < 0.15:
+            return {"category": "it_support", "domain": "general", "direct_response": None}
+            
+        match = INTENT_CLASSES[best_match_idx]
         
-        If category is "it_support", you MUST also classify the `domain` as one of:
-        - "network_diagnostics": ping, ipconfig, local windows commands
-        - "cloud_integrations": okta, jira, slack, resetting passwords, tickets
-        - "web_scraping": scraping HR portals, reading external documentation
-        - "general": general IT questions
+        direct_resp = None
+        if match["category"] == "greeting":
+            direct_resp = "Hello! I am AegisDesk, your autonomous IT assistant. How can I help you today?"
+            
+        return {"category": match["category"], "domain": match["domain"], "direct_response": direct_resp}
         
-        If category is "greeting", "direct_answer", or "out_of_scope", you MUST provide a friendly response in `direct_response`.
-        
-        You MUST output a valid JSON object. Format MUST be exactly: {{"category": "category_name", "domain": "domain_name or null", "direct_response": "response string or null"}}"""
-        
-        res = llm.invoke([("system", sys_msg), ("human", query)])
-        logger.debug(f"Router Decision: {res.content}")
-        return json.loads(res.content)
     except Exception as e:
-        logger.error(f"Intent Routing Failed: {e}", exc_info=True)
-        return {"category": "it_support", "direct_response": None}
+        logger.error(f"Offline Intent Routing Failed: {e}", exc_info=True)
+        return {"category": "it_support", "domain": "general", "direct_response": None}
     
 def expand_query(query: str, history: list) -> str:
     """Uses chat history to create a context-aware standalone English search query."""
