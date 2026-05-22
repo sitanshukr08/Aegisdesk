@@ -234,6 +234,22 @@ def tickets_list():
             console.print(f"🎫 [bold]{t['ticket_id']}[/bold] | Status: [yellow]{t['status']}[/yellow] | Issue: [dim]{t['issue_description']}[/dim]")
 
 @app.command()
+def teach_router(query: str, category: str, domain: str):
+    """Teach the semantic router a new phrase or historical ticket.
+    
+    Example: aegisdesk teach-router "Deploy to AWS" it_support cloud_integrations
+    """
+    from app.memory.graph_store import graph_db
+    try:
+        graph_db.add_routing_example(query, category, domain)
+        console.print(f"[bold green]Successfully taught router:[/bold green] '{query}' -> {category}/{domain}")
+        # Clear the singleton so it reloads from DB next time
+        from app.rag import pipeline
+        pipeline._ROUTER_MODEL = None
+    except Exception as e:
+        console.print(f"[bold red]Failed to teach router:[/bold red] {e}")
+
+@app.command()
 def author():
     """Show the author/creator of AegisDesk."""
     console.print("[bold cyan]AegisDesk[/bold cyan] was created by [bold magenta]sitanshukr08[/bold magenta].")

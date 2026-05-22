@@ -44,6 +44,15 @@ CREATE TABLE IF NOT EXISTS memory_retention_runs (
     deleted_count INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS routing_examples (
+    id TEXT PRIMARY KEY,
+    query TEXT NOT NULL,
+    category TEXT NOT NULL,
+    domain TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE(query)
+);
 """
 
 INDEX_SQL = """
@@ -214,6 +223,33 @@ class GraphMemoryStore:
                 pass # Column already exists!
                 
             conn.executescript(INDEX_SQL)
+
+    def add_routing_example(self, query: str, category: str, domain: str) -> None:
+        """Stores a historical ticket/query to be used for dynamic few-shot routing."""
+        q = (query or "").strip().lower()
+        if not q or not category or not domain:
+            raise ValueError("query, category, and domain are required.")
+            
+        now = self._utc_now()
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO routing_examples (id, query, category, domain, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(query) DO UPDATE SET 
+                    category=excluded.category,
+                    domain=excluded.domain,
+                    created_at=excluded.created_at
+                """,
+                (uuid4().hex, q, category, domain, now.isoformat()),
+            )
+            conn.commit()
+
+    def get_routing_examples(self) -> list[dict]:
+        """Fetches all routing examples from the database."""
+        with self._connect() as conn:
+            rows = conn.execute("SELECT query, category, domain FROM routing_examples").fetchall()
+        return [{"query": row["query"], "category": row["category"], "domain": row["domain"]} for row in rows]
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path, check_same_thread=False)

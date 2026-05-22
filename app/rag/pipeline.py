@@ -13,23 +13,58 @@ logger = get_logger("aegisdesk.pipeline")
 
 # Offline Intent Vocabulary (Zero-Token Routing)
 INTENT_CLASSES = [
-    {"category": "greeting", "domain": None, "keywords": "hi hello thanks hey greetings good morning afternoon"},
-    {"category": "it_support", "domain": "network_diagnostics", "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing broken pipe gateway"},
-    {"category": "it_support", "domain": "cloud_integrations", "keywords": "okta jira slack reset password unlock account ticket aws azure active directory sso login token expired"},
-    {"category": "it_support", "domain": "web_scraping", "keywords": "scrape read wiki documentation hr portal benefits policy external website url page"},
+    {
+        "category": "greeting", 
+        "domain": None, 
+        "keywords": "hi hello thanks hey greetings good morning afternoon good evening what's up how are you bye cya"
+    },
+    {
+        "category": "it_support", 
+        "domain": "network_diagnostics", 
+        "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing broken pipe gateway dns traceroute nmap packet loss subnet mask ip address port closed tcp udp proxy firewall bigfix global protect"
+    },
+    {
+        "category": "it_support", 
+        "domain": "cloud_integrations", 
+        "keywords": "okta jira slack reset password unlock account ticket aws azure active directory sso login token expired ec2 s3 kubernetes pod docker rancher intellij eclipse bitlocker ad profile update rdp ssh keys cloud database sql mfa authenticator cyberark"
+    },
+    {
+        "category": "it_support", 
+        "domain": "web_scraping", 
+        "keywords": "scrape read wiki documentation hr portal benefits policy external website url page search internet wikipedia latest news status cve lookup extract text web article manual guide"
+    },
 ]
 
 _ROUTER_MODEL: TextEmbedding | None = None
 _INTENT_VECTORS: np.ndarray | None = None
+_ROUTER_META: list[dict] | None = None
 
-def get_router() -> tuple[TextEmbedding, np.ndarray]:
-    global _ROUTER_MODEL, _INTENT_VECTORS
+def get_router() -> tuple[TextEmbedding, np.ndarray, list[dict]]:
+    global _ROUTER_MODEL, _INTENT_VECTORS, _ROUTER_META
     if _ROUTER_MODEL is None:
         logger.info("Loading FastEmbed model for semantic routing...")
         _ROUTER_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
-        corpus = [item["keywords"] for item in INTENT_CLASSES]
+        
+        # Base static corpus
+        corpus = []
+        meta = []
+        for item in INTENT_CLASSES:
+            corpus.append(item["keywords"])
+            meta.append({"category": item["category"], "domain": item["domain"]})
+            
+        # Dynamic few-shot examples from DB
+        try:
+            from app.memory.graph_store import graph_db
+            examples = graph_db.get_routing_examples()
+            for ex in examples:
+                corpus.append(ex["query"])
+                meta.append({"category": ex["category"], "domain": ex["domain"]})
+        except Exception as e:
+            logger.error(f"Failed to load dynamic routing examples: {e}")
+            
         _INTENT_VECTORS = np.array(list(_ROUTER_MODEL.embed(corpus)))
-    return _ROUTER_MODEL, _INTENT_VECTORS
+        _ROUTER_META = meta
+    return _ROUTER_MODEL, _INTENT_VECTORS, _ROUTER_META
 
 def analyze_intent(query: str, history: list) -> dict:
     """Classifies the query offline using SentenceTransformer (Zero-Token)."""
@@ -40,7 +75,7 @@ def analyze_intent(query: str, history: list) -> dict:
             return {"category": "it_support", "domain": "web_scraping", "direct_response": None}
             
         # Semantic Routing using Singleton Model
-        model, intent_vectors = get_router()
+        model, intent_vectors, router_meta = get_router()
         query_vec = np.array(list(model.embed([q_lower])))
         
         # Calculate cosine similarity manually since vectors are normalized by default
@@ -52,7 +87,7 @@ def analyze_intent(query: str, history: list) -> dict:
         if similarities[best_match_idx] < 0.55:
             return {"category": "it_support", "domain": "general", "direct_response": None}
             
-        match = INTENT_CLASSES[best_match_idx]
+        match = router_meta[best_match_idx]
         
         direct_resp = None
         if match["category"] == "greeting":
