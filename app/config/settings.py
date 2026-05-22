@@ -12,7 +12,7 @@ class Config:
     llm_model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
     
     db_path = os.getenv("CHROMA_DB_PATH", os.path.expanduser("~/.aegisdesk/chroma_db"))
-    embed_model = os.getenv("EMBED_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
+    embed_model = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
     threshold = float(os.getenv("CONFIDENCE_THRESHOLD", "0.7"))
     top_k = int(os.getenv("TOP_K", "4"))
     

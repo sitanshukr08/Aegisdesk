@@ -1,10 +1,10 @@
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 import chromadb
 from chromadb.config import Settings
 from app.config.settings import settings
 
-embeddings = HuggingFaceEmbeddings(model_name=settings.embed_model)
+embeddings = FastEmbedEmbeddings(model_name=settings.embed_model)
 
 def get_embeds():
     return embeddings
