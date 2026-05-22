@@ -1,8 +1,10 @@
-# Rich Typer CLI (`src/aegisdesk/cli/`)
+# Command Line Interface (CLI)
+> **Rich-Powered Interactive Terminal**
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+Built using `Typer` and `Rich`, this directory provides the administrator interface for AegisDesk.
 
-**The Headless Operator Interface**
-
-A fully self-contained administration binary, dynamically rendering streaming outputs, spin-locks, and ASCII diagnostics using Textualize's `Rich` library.
-- Safely handles native Windows `cp1252` terminal streams by reconfiguring stdout to `utf-8`.\n
+## Commands
+- `aegisdesk ask "query"`: Streams reasoning to the terminal.
+- `aegisdesk ingest <file>`: Chunks and loads PDFs/txts into ChromaDB.
+- `aegisdesk teach-router "query" category domain`: Manually inserts a historical ticket into the SQLite database for dynamic Few-Shot semantic routing.
+- `aegisdesk init`: Scaffolds the `~/.aegisdesk` directory structure.

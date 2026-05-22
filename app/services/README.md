@@ -1,8 +1,5 @@
-# External Services (`app/services/`)
+# External Services
+> **Integrations & Security Validations**
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
-
-**Isolated 3rd-Party Integrations**
-
-- **`vision_service.py`**: Integrates with specialized VLM (Vision-Language Models) to ingest screenshots of user errors (e.g., BSOD) and extract diagnostic string parameters.
-- **`auth_service.py`**: Manages PBKDF2 hashed password comparisons, active session tracking, and JWT asymmetric cryptographic token minting.\n
+- **Auth Service**: Implements `passlib.context` for bcrypt password hashing and `python-jose` for stateless JWT encoding/decoding.
+- **Vision Service**: (If enabled) Routes base64 images to Vision Language Models for screenshot diagnostics.

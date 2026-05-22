@@ -1,9 +1,13 @@
-# Retrieval & LangGraph Swarm (`app/rag/`)
+# Zero-Token Semantic Router & Swarm
+> **The Brain of AegisDesk**
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+This module handles the core routing and agent execution.
 
-**Zero-Token Deterministic Swarm Architecture**
+## 1. Zero-Token Routing (`pipeline.py`)
+Incoming queries are embedded locally using `BAAI/bge-small-en-v1.5` (via `fastembed` ONNX execution). This calculates cosine similarity against our offline vocabulary in **< 5 milliseconds**. If the confidence is `>= 0.55`, it routes to a specific agent directly. Otherwise, it safely falls back to the General agent. No LLM API tokens are burned during routing.
 
-AegisDesk's core intelligence engine.
-- **`graph.py`**: The StateGraph DAG definition. It establishes boundary interrupts, dynamically enforces the "Denial of Wallet" `tool_calls` loop breaker (`n >= 3`), and transitions execution between specialized IT, Web, and Cloud agents.
-- **`pipeline.py`**: Exposes the `execute_rag_pipeline` async generator. Handles `Naive Bayes` and `MiniLM Semantic Embedding` intent classification to map requests to agents before engaging the heavy LLM API.\n
+## 2. The LangGraph Swarm (`graph.py`)
+- **Network Agent**: Executes restricted ICMP/TCP commands.
+- **Cloud Agent**: Interfaces with Okta, Azure, AWS.
+- **Web Agent**: Secured against SSRF via DNS parsing.
+- **General Agent**: RAG fallback for HR/IT policies.

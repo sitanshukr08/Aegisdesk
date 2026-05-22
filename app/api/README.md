@@ -1,9 +1,9 @@
-# API Endpoints (`app/api/`)
+# API Endpoints
+> **Secured Communication Layer**
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+All external requests traverse through this directory. 
 
-**Ultra-Fast Server-Sent Events (SSE) Streaming Layer**
-
-This module handles asynchronous web traffic.
-- **`endpoints.py`**: Utilizes `StreamingResponse` over `text/event-stream` to push chunked LLM outputs from the LangGraph execution engine to the UI in real-time. Protected against Event Loop Deadlocks by offloading ML inferencing to `asyncio.to_thread`.
-- **`auth.py`**: JWT token generation and validation. Enforces strict Role-Based Access Control (RBAC), e.g., locking `/ingest` routes strictly to users with the `admin` flag.\n
+## Endpoints
+1. `POST /api/v1/auth/token`: Exchanges OAuth2 password requests for cryptographically signed JWTs.
+2. `POST /api/v1/query`: The core reasoning endpoint. Requires a valid JWT. Uses `StreamingResponse` to push LangGraph events.
+3. `POST /api/v1/ingest`: Admin-only endpoint for uploading IT policy PDFs and HR documents into the ChromaDB Knowledge Base.

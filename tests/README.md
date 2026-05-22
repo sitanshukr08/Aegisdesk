@@ -1,28 +1,11 @@
-# `tests/`
+# Verification Suite
+> **Enterprise Validation & Benchmarks**
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+## 1. Benchmarking (`benchmark.py`)
+A rigorous 50-query stress test evaluating the Zero-Token Semantic Router. Validates sub-5ms latency and >75% strict direct-match accuracy.
 
+## 2. Exploit Testing (`test_exploits.py`)
+Red-Team simulated attacks against the RCE tools (e.g. attempting to inject `&& rm -rf /`) and SSRF tools (e.g. attempting to scrape `http://169.254.169.254`).
 
-This folder will hold unit and integration tests.
-
-## Test Strategy
-
-Start with behavior that can run without network access or API keys:
-
-- preprocessing
-- cache key construction
-- SQLite repositories
-- ticket payload construction
-- retrieval interfaces with fake providers
-- CLI command smoke tests
-
-## Integration Tests
-
-Use fake LLM, fake vision, fake embeddings, and fake ticket providers before adding tests that require real external services.
-
-The first useful integration flow is:
-
-```text
-init local state -> ingest sample KB -> ask known IT question -> receive answer
-init local state -> ask unknown question -> receive ticket escalation
-```
+## 3. End-to-End (`test_e2e.py`)
+Validates the full pipeline execution from CLI input to tool response.

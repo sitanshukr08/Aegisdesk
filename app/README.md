@@ -1,9 +1,9 @@
-# Core Application (`app/`)
+# FastAPI Backend (App)
+> **AegisDesk Core Application Server**
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+This directory contains the primary FastAPI server that exposes AegisDesk's intelligence to external clients (UIs, CLI headless mode, etc.).
 
-This module contains the primary FastAPI server logic and the LangGraph Multi-Agent execution engine.
-
-**Architecture Details:**
-- **main.py**: The ASGI entry point utilizing FastAPI. Protected by CORS, JWT, and `cachetools.TTLCache` to prevent unbounded memory scaling.
-- The submodules decouple the API layer from the Semantic Memory and Retrieval-Augmented Generation workflows.\n
+## Architecture
+- **API**: Modern asynchronous FastAPI utilizing Server-Sent Events (SSE) to stream chunks of reasoning back to the client in real-time.
+- **Middleware**: Secured with strict CORS and Rate-Limiting.
+- **Tracing**: Fully instrumented with `OpenTelemetry` for Jaeger distributed tracing. Every agent hop is tracked.

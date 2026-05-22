@@ -1,8 +1,9 @@
-# Graph Memory (`app/memory/`)
+# Graph Memory Engine (SQLite)
+> **Persistent ACID-Compliant Knowledge Graph**
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+Unlike traditional stateless chatbots, AegisDesk remembers users across sessions.
 
-**ACID-Compliant Persistent Semantic Graphs**
-
-Legacy systems rely on volatile NetworkX objects. AegisDesk uses `sqlite-vec` to persist memory via local SQLite.
-- **`context_assembler.py`**: Evaluates User, Issue, and Hardware subgraph traversals dynamically. Instead of truncating arbitrarily, it slices the top 50 semantic candidates and routes them through a PyTorch CrossEncoder to locate exact graph memory injections without overflowing API token limits.\n
+## Core Features
+1. **Entity-Relation Extraction**: The LLM extracts triplets (e.g., `user --[HAS_ISSUE]--> VPN`) in the background.
+2. **Dynamic Few-Shot Routing**: We store manually taught routing examples in the `routing_examples` table. On startup, these are embedded into a dense vector space to provide autonomous Zero-Token intent routing.
+3. **Pruning**: Retention jobs automatically garbage collect stale nodes.
