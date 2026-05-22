@@ -41,6 +41,14 @@ AegisDesk is hardened against Red Team exploits:
 ## 🛠️ Quick Start
 
 ### Installation
+
+You can install AegisDesk directly from PyPI:
+```bash
+pip install aegisdesk
+```
+
+#### Developer Installation (From Source)
+If you want to modify the core agents or run the test suite:
 ```bash
 git clone https://github.com/sitanshukr08/Aegisdesk.git
 cd Aegisdesk
