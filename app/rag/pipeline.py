@@ -1,7 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from app.config.settings import settings
 import json
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 import numpy as np
 from src.aegisdesk.observability.logger import get_logger
 from src.aegisdesk.core.llm_factory import get_llm
@@ -19,16 +19,16 @@ INTENT_CLASSES = [
     {"category": "it_support", "domain": "web_scraping", "keywords": "scrape read wiki documentation hr portal benefits policy external website url page"},
 ]
 
-_ROUTER_MODEL: SentenceTransformer | None = None
+_ROUTER_MODEL: TextEmbedding | None = None
 _INTENT_VECTORS: np.ndarray | None = None
 
-def get_router() -> tuple[SentenceTransformer, np.ndarray]:
+def get_router() -> tuple[TextEmbedding, np.ndarray]:
     global _ROUTER_MODEL, _INTENT_VECTORS
     if _ROUTER_MODEL is None:
-        logger.info("Loading SentenceTransformer model for semantic routing...")
-        _ROUTER_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+        logger.info("Loading FastEmbed model for semantic routing...")
+        _ROUTER_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
         corpus = [item["keywords"] for item in INTENT_CLASSES]
-        _INTENT_VECTORS = _ROUTER_MODEL.encode(corpus, convert_to_numpy=True)
+        _INTENT_VECTORS = np.array(list(_ROUTER_MODEL.embed(corpus)))
     return _ROUTER_MODEL, _INTENT_VECTORS
 
 def analyze_intent(query: str, history: list) -> dict:
@@ -41,7 +41,7 @@ def analyze_intent(query: str, history: list) -> dict:
             
         # Semantic Routing using Singleton Model
         model, intent_vectors = get_router()
-        query_vec = model.encode([q_lower], convert_to_numpy=True)
+        query_vec = np.array(list(model.embed([q_lower])))
         
         # Calculate cosine similarity manually since vectors are normalized by default
         from sklearn.metrics.pairwise import cosine_similarity
