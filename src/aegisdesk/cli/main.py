@@ -27,6 +27,8 @@ os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 import typer
 from rich.console import Console
+from rich.panel import Panel
+from rich.markdown import Markdown
 
 if sys.platform == "win32":
     try:
@@ -125,19 +127,26 @@ def ask(
                 nonlocal needs_approval
                 nonlocal user_approval
                 try:
-                    with console.status("[bold cyan]Analyzing...[/bold cyan]", spinner="dots") as status:
+                    with console.status("[bold cyan]Analyzing intent...[/bold cyan]", spinner="dots") as status:
                         async for chunk in execute_rag_pipeline(query, user, session, image, approval_flag):
                             if isinstance(chunk, dict):
                                 if chunk["type"] == "status":
                                     status.update(f"[bold cyan]Thinking... ({chunk['msg']})[/bold cyan]")
                                 elif chunk["type"] == "interrupt":
                                     status.stop()
-                                    console.print(f"\n⚠️  [bold yellow]ACTION REQUIRED:[/bold yellow] {chunk['msg']}")
-                                    user_approval = typer.confirm("Allow execution?")
+                                    console.print("\n")
+                                    console.print(Panel(
+                                        f"[bold red]System Intercepted Tool Execution[/bold red]\n\n"
+                                        f"AegisDesk requires permission to proceed.\n"
+                                        f"[yellow]{chunk['msg']}[/yellow]",
+                                        title="⚠️ SECURITY INTERRUPT",
+                                        border_style="red"
+                                    ))
+                                    user_approval = typer.confirm("Authorize this action?")
                                     needs_approval = True
                                     return
                                 elif chunk["type"] == "content":
-                                    status.stop() # Hide the spinner
+                                    status.stop()
                                     console.print(chunk["msg"])
                             else:
                                 status.stop()
@@ -148,8 +157,77 @@ def ask(
             await stream_output(user_approval)
             if not needs_approval:
                 break
+        console.print("\n")
 
     asyncio.run(run_pipeline())
+
+@app.command()
+def chat(
+    user: str = typer.Option("default_user", "--user", "-u", help="User ID for graph memory"),
+    session: str = typer.Option("default_session", "--session", "-s", help="Session ID for chat history")
+):
+    """Start an interactive, persistent AegisDesk session."""
+    load_dotenv()
+    console.print(Panel(
+        f"[bold cyan]AegisDesk Interactive Session[/bold cyan]\n"
+        f"User: [green]{user}[/green] | Session: [green]{session}[/green]\n"
+        f"[dim]Type 'exit' or 'quit' to end.[/dim]",
+        border_style="cyan"
+    ))
+    
+    while True:
+        try:
+            query = console.input("[bold cyan]❯[/bold cyan] ")
+            if query.lower() in ("exit", "quit", "q"):
+                console.print("[dim]Session ended.[/dim]")
+                break
+            if not query.strip():
+                continue
+                
+            async def run_pipeline():
+                user_approval = None
+                while True:
+                    needs_approval = False
+                    async def stream_output(approval_flag):
+                        nonlocal needs_approval
+                        nonlocal user_approval
+                        try:
+                            with console.status("[bold cyan]Analyzing intent...[/bold cyan]", spinner="dots") as status:
+                                async for chunk in execute_rag_pipeline(query, user, session, None, approval_flag):
+                                    if isinstance(chunk, dict):
+                                        if chunk["type"] == "status":
+                                            status.update(f"[bold cyan]Thinking... ({chunk['msg']})[/bold cyan]")
+                                        elif chunk["type"] == "interrupt":
+                                            status.stop()
+                                            console.print("\n")
+                                            console.print(Panel(
+                                                f"[bold red]System Intercepted Tool Execution[/bold red]\n\n"
+                                                f"AegisDesk requires permission to proceed.\n"
+                                                f"[yellow]{chunk['msg']}[/yellow]",
+                                                title="⚠️ SECURITY INTERRUPT",
+                                                border_style="red"
+                                            ))
+                                            user_approval = typer.confirm("Authorize this action?")
+                                            needs_approval = True
+                                            return
+                                        elif chunk["type"] == "content":
+                                            status.stop()
+                                            console.print(chunk["msg"])
+                                    else:
+                                        status.stop()
+                                        console.print(chunk, end="")
+                        except Exception as e:
+                            console.print(f"\n❌ [bold red]Pipeline Error:[/bold red] {e}")
+                    
+                    await stream_output(user_approval)
+                    if not needs_approval:
+                        break
+                console.print("\n")
+            
+            asyncio.run(run_pipeline())
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[dim]Session ended.[/dim]")
+            break
 
 @app.command()
 def doctor():
