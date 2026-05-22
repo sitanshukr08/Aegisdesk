@@ -26,3 +26,6 @@ services:
     # Drop root capabilities inside the container
     cap_drop:
       - ALL
+    cap_add:
+      - NET_RAW        # Required for ping / ICMP
+      - NET_ADMIN      # Required for interface enumeration

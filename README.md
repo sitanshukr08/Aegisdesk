@@ -96,3 +96,5 @@ TOTAL                                      1218    729    40%
 ======================= 21 passed, 3 warnings in 32.98s =======================
 ```
 *Note: Uncovered lines primarily relate to CLI Typer definitions and unimplemented memory stubs.*
+
+> **E2E Testing Limitation**: Our integration test (`test_e2e.py`) validates that the semantic router accurately matches intents and that the execution scaffolding accepts the routed request. However, to keep CI fast and deterministic, the LLM layer is mocked before it reaches the tool layer. It does not validate that OS commands or live DNS-pinned web requests execute properly end-to-end; those security-sensitive boundaries are exclusively validated by our isolated unit tests.
