@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  aegisdesk-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: aegisdesk-api:latest
+    container_name: aegisdesk_api
+    ports:
+      - "8000:8000"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change_this_in_production}
+      - MAX_TOOL_RECURSION=${MAX_TOOL_RECURSION:-5}
+    volumes:
+      # Persist ChromaDB Vector Store
+      - ./chroma_db:/code/chroma_db
+      # Persist SQLite Checkpoint Memory
+      - ./data:/code/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    # Drop root capabilities inside the container
+    cap_drop:
+      - ALL

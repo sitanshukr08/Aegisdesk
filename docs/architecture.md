@@ -1,50 +1,64 @@
-# Architecture
+# AegisDesk Architecture
 
-AegisDesk is an Autonomous IT Agent built on LangGraph. It is designed with a **CLI-first** testing boundary and a **FastAPI** enterprise integration layer.
+This document maps the core execution flow, memory structures, and architectural boundaries of AegisDesk.
 
-## The AegisDesk Engine (`src/aegisdesk/core/`)
+## Swarm Graph (LangGraph)
 
-The core of the system is a LangGraph State Machine.
-
-### The Agent State
-```python
-class AgentState(TypedDict):
-    session_id: str
-    user_id: str
-    query: str
-    messages: Annotated[list, add_messages] # Persistent Conversation History
-    intent_category: Optional[str]
-    context: Optional[str]
-    final_answer: Optional[str]
+```mermaid
+graph TD
+    User([User Request]) --> Router[Zero-Token Router<br/>(MiniLM-L6-v2)]
+    
+    %% Semantic Routing
+    Router -- Confidence > 0.20 --> DomainCheck{Intent Domain}
+    Router -- Confidence < 0.20 --> Retrieve[Retrieve Internal<br/>(ChromaDB context)]
+    
+    %% Intent Domains
+    DomainCheck -- network_diagnostics --> NetAgent[Network Agent<br/>(OS Diagnostic Tools)]
+    DomainCheck -- cloud_integrations --> CloudAgent[Cloud Agent<br/>(REST API Tools)]
+    DomainCheck -- web_scraping --> WebAgent[Web Agent<br/>(Headless Scraper with SSRF protection)]
+    DomainCheck -- general --> GenAgent[General IT Agent]
+    
+    %% Sub-Routing fallback
+    Retrieve -- High Confidence --> GenAgent
+    Retrieve -- Low Confidence --> WebAgent
+    
+    %% HITL / Safety boundary
+    NetAgent --> Supervisor{Tool Loop Check}
+    CloudAgent --> Supervisor
+    WebAgent --> Supervisor
+    GenAgent --> Supervisor
+    
+    Supervisor -- Tool Calls < MAX_TOOL_RECURSION --> Tools[Execute Tool Node]
+    Tools --> DomainCheck
+    
+    Supervisor -- Infinite Loop Detected --> Escalate[Escalate Node<br/>(ServiceNow/Jira)]
+    Supervisor -- Final Answer Generated --> End([Return Final Answer])
+    
+    Escalate --> End
 ```
 
-### The Query Flow
-1. **Intent Routing**: The `route_intent` node classifies the user query (e.g., 'greeting', 'it_support', 'system_diagnostic').
-2. **Retrieval**: The `retrieve_internal` node expands the query, injects Semantic Graph Memory facts, and pulls chunks from ChromaDB.
-3. **Reranking**: BGE Cross-Encoder scores the chunks.
-4. **Answer Generation & Tool Calling**: The `generate_answer` node invokes the `LLMFactory`. 
-   - If the LLM returns a text answer, the graph routes to `end`.
-   - If the LLM generates a tool call, the graph routes to the `tools` node.
-5. **The ToolNode (Autonomous Execution)**: The graph executes the requested tool (e.g. `ping_network`, `update_jira_ticket`) and routes back to `generate_answer` so the LLM can read the tool output.
+## Memory Architecture (Semantic Graph)
 
-## Security & Human-in-the-Loop (HITL)
-
-AegisDesk has powerful OS-level tools. To prevent security incidents, the LangGraph engine is compiled with a security interrupt:
-```python
-app_graph = workflow.compile(checkpointer=memory, interrupt_before=["tools"])
+```mermaid
+graph TD
+    subgraph SQLite-Vec Database
+        Nodes[Entity Nodes<br/>(Users, Devices, Issues)]
+        Edges[Relational Edges<br/>(Belongs_to, Associated_with)]
+    end
+    
+    subgraph FastAPI Runtime
+        Extract[Extractor<br/>(Entity Extraction)]
+        Assemble[Assembler<br/>(Graph Traversal)]
+    end
+    
+    UserQuery --> Extract
+    Extract --> Nodes
+    Nodes --> Edges
+    Edges --> Assemble
+    Assemble --> Context(Injected Context)
 ```
-When running locally via the CLI, if the LLM attempts to run a tool, the graph physically pauses execution. The `aegisdesk` CLI intercepts the state and uses `typer.confirm()` to ask the user for approval. If approved, the graph dynamically resumes.
 
-## Persistence Model
-
-SQLite stores durable application state via the `AsyncSqliteSaver`. This includes:
-- User chat history and `AgentState` checkpoints
-- NetworkX Knowledge Graph Memory edges
-- Incident Tickets
-
-ChromaDB purely stores vector embeddings and handles similarity search.
-
-## Delivery Surfaces
-
-1. **CLI (`aegisdesk`)**: The primary local administrative surface. It handles `init`, `ingest`, and `ask` with beautiful `Rich` console outputs.
-2. **API (`app/api/endpoints.py`)**: A headless wrapper for enterprise integrations. It streams the LangGraph transitions via Server-Sent Events (SSE). It allows external systems like Slack or Zendesk to invoke AegisDesk over HTTP.
+## Zero-Trust Security Boundary
+1. **OS Execution**: `subprocess.run` enforces `shell=False`.
+2. **SSRF**: `DNSPinnedAdapter` resolves IP once and pins it to the socket layer.
+3. **Loop Mitigation**: `MAX_TOOL_RECURSION` halts denial of wallet attacks.
