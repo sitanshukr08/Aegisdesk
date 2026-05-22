@@ -1,28 +1,17 @@
-import os
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
+import sys
+import builtins
 
-INTENT_CLASSES = [
-    {"category": "greeting", "domain": None, "keywords": "hi hello thanks hey greetings good morning afternoon"},
-    {"category": "it_support", "domain": "network_diagnostics", "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing broken pipe"},
-    {"category": "it_support", "domain": "cloud_integrations", "keywords": "okta jira slack reset password unlock account ticket aws azure active directory sso login token expired"},
-    {"category": "it_support", "domain": "web_scraping", "keywords": "scrape read wiki documentation hr portal benefits policy external website url page"},
-]
+orig_import = builtins.__import__
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
-corpus = [item["keywords"] for item in INTENT_CLASSES]
-intent_vectors = model.encode(corpus, convert_to_numpy=True)
+def my_import(name, globals=None, locals=None, fromlist=(), level=0):
+    if name == 'transformers':
+        import traceback
+        traceback.print_stack()
+    return orig_import(name, globals, locals, fromlist, level)
 
-queries = [
-    "I can't reach the corporate gateway",
-    "My Okta session died"
-]
+builtins.__import__ = my_import
 
-for q in queries:
-    q_vec = model.encode([q], convert_to_numpy=True)
-    sim = cosine_similarity(q_vec, intent_vectors).flatten()
-    best_idx = int(np.argmax(sim))
-    print(f"Query: {q}")
-    print(f"Similarities: {sim}")
-    print(f"Best match: {INTENT_CLASSES[best_idx]['domain']} with score {sim[best_idx]}")
+try:
+    from src.aegisdesk.core.pipeline import execute_rag_pipeline
+except Exception as e:
+    pass

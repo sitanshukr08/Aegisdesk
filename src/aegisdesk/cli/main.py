@@ -22,6 +22,9 @@ import sys
 import asyncio
 import io
 from pathlib import Path
+import os
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+
 import typer
 from rich.console import Console
 

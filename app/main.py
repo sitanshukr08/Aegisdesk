@@ -1,3 +1,6 @@
+import os
+os.environ["TRANSFORMERS_VERBOSITY"] = "error"
+
 from fastapi import FastAPI
 from app.api.endpoints import router as api_router
 from app.api.auth import router as auth_router
