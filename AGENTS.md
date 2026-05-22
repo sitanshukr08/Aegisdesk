@@ -1,5 +1,11 @@
 # Agent Guide
 
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
 This repository is optimized for focused, low-context collaboration between humans and AI agents. Read this file before changing code or docs.
 
 ## Start Here
@@ -9,7 +15,7 @@ Use `docs/context-map.md` to choose the minimum files needed for the task. Do no
 ## Architecture Boundary
 
 AegisDesk uses **LangGraph** for its core intelligence and state tracking.
-- The Nodes are defined in `app/rag/pipeline.py` and `app/rag/graph.py`.
+- The Nodes are defined in `app/rag/pipeline.py` and `app/rag/graph.py (LangGraph Swarm) (LangGraph Swarm)`.
 - The Tools are defined in `src/aegisdesk/core/tools.py` and `integration_tools.py`.
 - The Execution Engine is `src/aegisdesk/core/pipeline.py`.
 
@@ -22,8 +28,8 @@ AegisDesk uses **LangGraph** for its core intelligence and state tracking.
 
 ## Task Routing
 
-- Documentation/Positioning: read `README.md`, `docs/roadmap.md`, and `docs/architecture.md`.
-- Tool creation: read `src/aegisdesk/core/tools.py` and `app/rag/graph.py`.
+- Documentation/Positioning: read `README.md`, `docs/roadmap.md`, and `docs/ARCHITECTURE.md`.
+- Tool creation: read `src/aegisdesk/core/tools.py` and `app/rag/graph.py (LangGraph Swarm) (LangGraph Swarm)`.
 - CLI work: read `src/aegisdesk/cli/main.py`.
 - Persistence work: read `docs/adr/0002-sqlite-plus-chroma.md`.
 - API work: read `app/api/endpoints.py` and `src/aegisdesk/core/pipeline.py`.

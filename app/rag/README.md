@@ -1,4 +1,7 @@
 # Retrieval & LangGraph Swarm (`app/rag/`)
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
 **Zero-Token Deterministic Swarm Architecture**
 
 AegisDesk's core intelligence engine.

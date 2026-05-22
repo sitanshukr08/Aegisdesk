@@ -1,4 +1,7 @@
 # Graph Memory (`app/memory/`)
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
 **ACID-Compliant Persistent Semantic Graphs**
 
 Legacy systems rely on volatile NetworkX objects. AegisDesk uses `sqlite-vec` to persist memory via local SQLite.

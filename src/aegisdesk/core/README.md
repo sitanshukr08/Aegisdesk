@@ -1,4 +1,7 @@
 # Core Tooling (`src/aegisdesk/core/`)
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
 **Enterprise-grade Security Execution**
 
 - **`tools.py`**: The `subprocess` execution layer. All inbound shell payloads are sterilized via strict Regex whitelisting (`sanitize_input`) to prevent RCE parameter injection vectors (`&`, `|`, `>`).

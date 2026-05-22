@@ -1,5 +1,11 @@
 # ADR 0001: CLI-First Delivery
 
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
 ## Status
 
 Accepted.

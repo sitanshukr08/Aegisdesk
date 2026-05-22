@@ -1,12 +1,18 @@
 # Context Map
 
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
 Use this map to load the smallest useful context for a task.
 
 ## Product Or README Changes
 Read:
 - `README.md`
 - `docs/roadmap.md`
-- `docs/architecture.md`
+- `docs/ARCHITECTURE.md`
 - `AGENTS.md`
 
 ## CLI Work
@@ -26,7 +32,7 @@ Read:
 
 ## LangGraph Node Work
 Read:
-- `app/rag/graph.py` (The StateGraph definition)
+- `app/rag/graph.py (LangGraph Swarm) (LangGraph Swarm)` (The StateGraph definition)
 - `app/rag/pipeline.py` (The logic inside the nodes)
 
 ## API Work

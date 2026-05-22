@@ -1,5 +1,8 @@
 # `examples/`
 
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
 This folder will hold sample inputs for demos and tests.
 
 ## Planned Content

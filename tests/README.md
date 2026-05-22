@@ -1,5 +1,8 @@
 # `tests/`
 
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
 This folder will hold unit and integration tests.
 
 ## Test Strategy

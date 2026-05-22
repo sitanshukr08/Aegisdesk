@@ -1,5 +1,8 @@
 # `src/aegisdesk/persistence/`
 
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
 This folder will contain durable storage code.
 
 ## Target Storage
@@ -25,4 +28,4 @@ Core services should call repository functions or classes from this package. The
 
 ## Migration Notes
 
-The first persistence PR should replace pickle graph memory with SQLite-backed `memory_edges` while preserving the current ability to query a user's known facts.
+The first persistence PR should replace sqlite-vec graph memory with SQLite-backed `memory_edges` while preserving the current ability to query a user's known facts.

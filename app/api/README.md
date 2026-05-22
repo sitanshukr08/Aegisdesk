@@ -1,4 +1,7 @@
 # API Endpoints (`app/api/`)
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
 **Ultra-Fast Server-Sent Events (SSE) Streaming Layer**
 
 This module handles asynchronous web traffic.

@@ -1,12 +1,18 @@
 # ADR 0002: SQLite Plus Chroma Persistence
 
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
+> **Verified for AegisDesk v0.1.0 (Phase 16)**
+
+
 ## Status
 
 Accepted.
 
 ## Context
 
-The prototype stores graph memory in a pickle file and stores vectors in Chroma. Pickle is not a good long-term persistence layer for user memory, ticket state, document metadata, or collaboration.
+The prototype stores graph memory in a sqlite-vec file and stores vectors in Chroma. sqlite-vec is not a good long-term persistence layer for user memory, ticket state, document metadata, or collaboration.
 
 The project needs durable state without making local setup heavy.
 
@@ -36,6 +42,6 @@ SQLite stores Chroma IDs so retrieved chunks can be traced back to documents and
 ## Consequences
 
 - Local CLI setup stays simple.
-- Memory can be queried and migrated without loading pickle files.
+- Memory can be queried and migrated without loading sqlite-vec files.
 - Ticket and run history becomes auditable.
 - A future Postgres migration remains possible if hosted usage requires it.
