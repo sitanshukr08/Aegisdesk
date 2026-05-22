@@ -8,7 +8,14 @@ import asyncio
 
 logger = get_logger("aegisdesk.retriever")
 
-reranker = TextCrossEncoder(model_name='BAAI/bge-reranker-base')
+_RERANKER = None
+
+def get_reranker():
+    global _RERANKER
+    if _RERANKER is None:
+        logger.info("Loading FastEmbed CrossEncoder...")
+        _RERANKER = TextCrossEncoder(model_name='BAAI/bge-reranker-base')
+    return _RERANKER
 
 async def get_context(user_id: str, original_q: str, expanded_q: str):
     try:
@@ -32,6 +39,7 @@ async def get_context(user_id: str, original_q: str, expanded_q: str):
             return "", 0.0
             
         # CRITICAL FIX: Offload heavy ONNX inference to a worker thread!
+        reranker = get_reranker()
         raw_scores = await asyncio.to_thread(lambda: list(reranker.rerank(expanded_q, unique_texts)))
         
         probabilities = 1 / (1 + np.exp(-np.array(raw_scores)))

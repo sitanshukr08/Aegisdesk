@@ -49,7 +49,7 @@ def analyze_intent(query: str, history: list) -> dict:
         best_match_idx = int(np.argmax(similarities))
         
         # Fallback if query doesn't match any known vectors strongly
-        if similarities[best_match_idx] < 0.20:
+        if similarities[best_match_idx] < 0.40:
             return {"category": "it_support", "domain": "general", "direct_response": None}
             
         match = INTENT_CLASSES[best_match_idx]
