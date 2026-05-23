@@ -110,6 +110,8 @@ Unlike systems that lose context on reboot, AegisDesk uses a custom **SQLite-bac
 - **SSRF Mitigation** — All web scraper requests undergo pre-flight DNS resolution. Loopback, link-local, or private subnet targets trigger an immediate block.
 - **Denial-of-Wallet Protection** — LangGraph Supervisor counts recursive `tool_calls`; infinite loops are caught at `n=5` and escalated to a human.
 - **Human-in-the-Loop** — Pipeline uses `interrupt_before=["dangerous_tools"]` so critical OS commands are never executed blindly.
+- **Information Disclosure Sanitization** — Raw API exceptions, internal paths, and organizational IDs are systematically masked from user output, securely logging stack traces internally while returning sanitized, generic error codes to the client.
+- **Async Rate Limit Resilience** — The architecture utilizes custom `asyncio.sleep()` exponential backoffs, ensuring transient HTTP 429 errors from LLM providers are handled silently without blocking the concurrent FastAPI SSE stream.
 
 ### 💻 Rich CLI Interface
 A `typer`-powered, `Rich`-rendered interactive CLI for headless server deployments — no browser required.
@@ -288,6 +290,8 @@ AegisDesk is hardened against common Red Team attack vectors:
 | Server-Side Request Forgery (SSRF) | Pre-flight DNS resolution blocks private/loopback/link-local targets |
 | Infinite Agent Loops (Denial of Wallet) | LangGraph Supervisor caps recursive `tool_calls` at `n=5`; escalates to human |
 | Blind OS Command Execution | `interrupt_before=["dangerous_tools"]` enforces Human-in-the-Loop review |
+| Information Disclosure | Exception sanitization masks raw stack traces, API keys, and internal file paths |
+| API Rate Limits (429) | Native async exponential backoff prevents SSE stream deadlocks |
 | Memory Leaks | Global `cachetools.TTLCache` with TTL-based garbage collection |
 | Async Deadlocks | CrossEncoder PyTorch inference decoupled via `asyncio.to_thread` |
 
@@ -369,8 +373,7 @@ Planned improvements include:
 ## Author
 
 **Sitanshu Kumar**
-- **Email**: [sitanshukumar65@gmail.com](mailto:sitanshukumar65@gmail.com)
-- **GitHub**: [@sitanshukr08](https://github.com/sitanshukr08)
+[GitHub: @sitanshukr08](https://github.com/sitanshukr08)
 ---
 
 > AegisDesk — *Turning the IT Service Desk from a cost center into an autonomous intelligence layer.*
