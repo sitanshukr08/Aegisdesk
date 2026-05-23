@@ -19,6 +19,9 @@ The `WEB_SCRAPING_TOOLS` (`safe_fetch`, `scrape_web_page`) are tested against:
 - **Cloud Metadata APIs**: `169.254.169.254` (AWS/Azure IMDS).
 - **DNS Rebinding Attacks**: The test suite mocks a custom `socket.gethostbyname` resolver to simulate an IP flipping from a safe external IP to an internal IP between the pre-flight check and the actual `requests.get` call. Our custom `DNSPinnedAdapter` ensures the attack fails.
 
+### 3. Tool Recursion Escalation
+If an agent hits the SSRF barrier and tries to "brute force" a scrape by calling the tool repeatedly, the system enforces a strict `n=5` loop limit. You can see the actual live output of this adversarial test [here](../docs/ssrf_verification.txt), demonstrating the graph killing the looping agent and generating an escalation ticket (`INC-XXXXX`).
+
 ## 🎭 Mocking Strategies
 
 Testing an agentic swarm asynchronously requires careful isolation:

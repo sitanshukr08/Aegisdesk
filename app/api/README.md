@@ -16,6 +16,17 @@ The LangGraph `astream` execution yields structured JSON chunks representing:
 2. Final LLM tokens (e.g., `{"type": "token", "content": "The "}`)
 3. Interrupt states requiring Human-in-the-Loop approval.
 
+### 🛡️ Information Disclosure Sanitization
+Raw API exceptions (such as LLM provider errors, internal stack traces, and Organizational IDs) are caught and natively suppressed before they hit the SSE HTTP response stream. The pipeline securely logs the raw exception trace internally and bubbles up a sanitized, generic error code to the client.
+
+### ⏱️ Async Rate Limit Resilience
+To protect the `uvicorn` workers from being blocked by LLM provider rate limits (HTTP 429), the API layer utilizes a custom asynchronous exponential backoff wrapper. 
+```python
+# LLM invocations are wrapped to avoid blocking the event loop
+await asyncio.sleep(2 ** attempt)
+```
+This ensures transient rate limit errors are handled silently without deadlocking concurrent streams.
+
 ## 🔐 Authentication & Rate Limiting
 
 - **JWT Auth**: The FastAPI server relies on OAuth2PasswordBearer. The `auth_service.py` validates JWTs signed by the `JWT_SECRET_KEY` specified in `.env`.

@@ -8,6 +8,11 @@ AegisDesk relies on a heavily decoupled memory architecture:
 1. **ChromaDB (Vector Space)**: Used for rapid semantic search over uploaded manuals, standard operating procedures, and historical resolved tickets.
 2. **SQLite (Semantic Graph)**: Used for LangGraph checkpointing (`AsyncSqliteSaver`). It provides ACID-compliant, thread-safe state persistence allowing a user to resume a ticket hours after closing their CLI/browser.
 
+### 🛡️ Strict Session Isolation
+Memory graphs are explicitly bound to uniquely generated session IDs (`uuid.uuid4().hex[:8]`). This prevents cross-session memory hallucination where an agent erroneously believes it has "already answered" a query based on a previous session's cached SQLite edges. 
+
+*(Note: UUID generation is a demo/testing isolation pattern. In a production deployment, session IDs are strictly derived from the authenticated user's JWT `sub` claim).*
+
 ## 🕸️ Waggle-Inspired Graph Traversal
 
 Unlike standard naive RAG (Retrieve-And-Generate), AegisDesk uses a deterministic graph-based retrieval pipeline inspired by Waggle/K-hop traversal models:

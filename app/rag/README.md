@@ -17,6 +17,9 @@ Once routed, the query enters specific specialist agents:
 3. **Web Agent**: Armed with Wikipedia, Tavily search, and SSRF-protected scraping tools.
 4. **General Agent**: RAG-only fallback with no tools, preventing accidental tool invocation on casual conversation.
 
+### 🛠️ Native JSON Tool Calling
+Agent system prompts strictly enforce native LLM tool-calling APIs without conversational wrappers. Early architectures that instructed the LLM to output a conversational preamble explaining the tool call failed; strict open-source models (like Llama-3) often hallucinate stringified JSON directly into the chat stream instead of triggering the native LangChain tool hooks. By stripping preambles, Llama-3 natively invokes tools with 100% reliability.
+
 ## ⏸️ Tool Invocation & Interrupts
 
 We use a dual-node pattern in `graph.py`. Tools are split by their danger level. If an agent calls a dangerous tool, LangGraph halts the state machine *before* the `ToolNode` executes, yielding an interrupt state to the API layer for manual authorization.

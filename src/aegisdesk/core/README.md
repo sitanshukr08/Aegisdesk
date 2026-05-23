@@ -24,3 +24,6 @@ In `pipeline.py`, the LangGraph compiler is explicitly configured with:
 workflow.compile(checkpointer=memory, interrupt_before=["dangerous_tools"])
 ```
 This guarantees mathematical execution suspension. The LLM cannot mutate the cloud or OS state without yielding control back to the FastAPI layer, which subsequently forces a `[y/N]` approval via the Typer CLI or Web UI.
+
+### 🛡️ Denial of Wallet (Loop Cutoff)
+To protect against runaway infinite loops (e.g., an LLM repeatedly failing to execute a command), the LangGraph Supervisor tracks recursion depth. The agent is halted at exactly `n=5` recursive tool invocations, and the thread is forcibly escalated to a human IT agent via a generated ticket.

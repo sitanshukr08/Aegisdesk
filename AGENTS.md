@@ -23,6 +23,7 @@ AegisDesk uses **LangGraph** for its core intelligence and state tracking.
 
 - **Use the `aegisdesk` CLI.** The CLI is installed via `pip install -e .`. Use `aegisdesk ask` or `aegisdesk doctor` to test changes. Do not run random python scripts directly.
 - **Respect the ToolNode Interrupts.** AegisDesk uses `interrupt_before=["tools"]` for Human-in-the-Loop security. If you alter the pipeline execution in `src/aegisdesk/core/pipeline.py`, ensure the interrupt flow logic remains intact so OS commands are never executed blindly.
+- **Use Native Tool APIs ONLY.** Never add conversational preambles to tool-calling agent prompts. Use native `tool_calls` API directives only. Models like Llama-3 will break and output stringified JSON if instructed to explain their actions before calling a tool.
 - **Use the LLMFactory.** Never instantiate `ChatGroq` or `ChatOpenAI` directly in the core logic. Always use `get_llm()` from `src/aegisdesk/core/llm_factory.py`.
 - **Use the Logger.** Do not use `print()`. Use `get_logger()` from `src/aegisdesk/observability/logger.py`.
 

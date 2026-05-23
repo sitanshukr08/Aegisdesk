@@ -26,10 +26,11 @@ Status: **Completed**
 - Secured the Web Agent against Time-Of-Check to Time-Of-Use (TOCTOU) Server-Side Request Forgery via a custom `DNSPinnedAdapter` that intercepts the HTTP socket layer.
 
 ## Phase 15 - 16: Operational Ergonomics & PyPI Readiness
-Status: **Completed**
+Status: **Completed (May 2026)**
 - Shipped `docker-compose.yml` mapping persistent `~/.aegisdesk` volumes and dropping root capabilities (`cap_drop: ALL`).
 - Decoupled state from the current working directory, injected an MIT License, and prepped the CLI for PyPI deployment.
 - Proved the execution pipeline via End-to-End (`test_e2e.py`) testing.
+- Hardened pipeline with Async Rate Limit Resilience, Information Disclosure boundary sanitization, and Strict UUID session isolation.
 
 ---
 
