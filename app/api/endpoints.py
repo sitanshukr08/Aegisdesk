@@ -20,10 +20,15 @@ RESPONSE_CACHE = TTLCache(maxsize=1000, ttl=600)
 class QueryRequest(BaseModel):
     query: str
     session_id: str
+    user_id: str = "default_user"
     user_approval: bool | None = None
 
-def get_cache_key(query: str, username: str) -> str:
-    return hashlib.md5(f"{username}:{query}".lower().strip().encode('utf-8')).hexdigest()
+from app.memory.graph_store import graph_db
+
+def get_cache_key(query: str, session_id: str, user_id: str) -> str:
+    last_mutated = graph_db.get_last_mutated(user_id)
+    safe_query = query.lower().strip()
+    return hashlib.md5(f"{session_id}:{safe_query}:{last_mutated}".encode('utf-8')).hexdigest()
 
 @router.post("/query")
 async def query_bot(
@@ -31,8 +36,8 @@ async def query_bot(
     background_tasks: BackgroundTasks
 ):
     try:
-        user_id = "default_user"
-        cache_key = get_cache_key(request.query, user_id)
+        user_id = request.user_id
+        cache_key = get_cache_key(request.query, request.session_id, user_id)
         
         if cache_key in RESPONSE_CACHE:
             print(f"[CACHE HIT] Serving instantly for: {request.query}")

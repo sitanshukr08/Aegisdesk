@@ -44,9 +44,9 @@ class AgentState(TypedDict):
     final_answer: str | None
 
 # 2. Define the Nodes
-def route_intent_node(state: AgentState):
+async def route_intent_node(state: AgentState):
     logger.debug("[LANGGRAPH] Node: route_intent")
-    intent = analyze_intent(state["query"], state.get("messages", []))
+    intent = await analyze_intent(state["query"], state.get("messages", []))
     
     update = {
         "intent_category": intent.get("category"),

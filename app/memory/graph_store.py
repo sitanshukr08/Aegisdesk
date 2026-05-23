@@ -2,6 +2,8 @@ import asyncio
 import json
 import os
 import sqlite3
+import aiosqlite
+import contextlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
@@ -90,8 +92,19 @@ class GraphMemoryStore:
         self.legacy_path = legacy_path
         self._lock = asyncio.Lock()
         self._context_assembler: Any | None = None
+        self.user_mutations: dict[str, float] = {}
         self._ensure_db()
         self._migrate_legacy_pickle()
+
+    def get_last_mutated(self, user_id: str) -> float:
+        return self.user_mutations.get((user_id or "").strip().lower(), 0.0)
+
+    def _mark_mutated(self, entity1: str, entity2: str = None) -> None:
+        now_ts = datetime.now(timezone.utc).timestamp()
+        if entity1:
+            self.user_mutations[(entity1 or "").strip().lower()] = now_ts
+        if entity2:
+            self.user_mutations[(entity2 or "").strip().lower()] = now_ts
 
     def attach_context_assembler(self, assembler: Any) -> None:
         self._context_assembler = assembler
@@ -105,8 +118,8 @@ class GraphMemoryStore:
 
         now = self._utc_now()
         async with self._lock:
-            with self._connect() as conn:
-                conn.execute(
+            async with self._connect() as conn:
+                await conn.execute(
                     """
                     INSERT INTO memory_facts (id, entity1, relation, entity2, status, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -115,7 +128,7 @@ class GraphMemoryStore:
                     """,
                     (uuid4().hex, e1, rel, e2, status, now.isoformat(), now.isoformat()),
                 )
-                self._insert_audit_event(
+                await self._insert_audit_event(
                     conn,
                     event_type="fact.upsert",
                     entity1=e1,
@@ -123,7 +136,9 @@ class GraphMemoryStore:
                     entity2=e2,
                     metadata={"source": "memory_extractor", "status": status},
                 )
-                self._maybe_prune(conn, now)
+                await self._maybe_prune(conn, now)
+                await conn.commit()
+            self._mark_mutated(e1, e2)
         print(f"[GRAPH MEMORY] Learned: {e1} --[{rel}]--> {e2} ({status})")
 
     async def supersede_facts_by_entity(self, entity: str) -> None:
@@ -131,13 +146,15 @@ class GraphMemoryStore:
         e = (entity or "").strip().lower()
         now = self._utc_now()
         async with self._lock:
-            with self._connect() as conn:
-                conn.execute(
+            async with self._connect() as conn:
+                await conn.execute(
                     "UPDATE memory_facts SET status = 'SUPERSEDED', updated_at = ? WHERE entity1 = ? OR entity2 = ?",
                     (now.isoformat(), e, e)
                 )
+                await conn.commit()
+            self._mark_mutated(e)
 
-    def fetch_facts_for_entity(self, entity: str, *, limit: int = 200, active_only: bool = True) -> list[MemoryFact]:
+    async def fetch_facts_for_entity(self, entity: str, *, limit: int = 200, active_only: bool = True) -> list[MemoryFact]:
         entity = (entity or "").strip().lower()
         if not entity:
             return []
@@ -155,11 +172,12 @@ class GraphMemoryStore:
         query += " ORDER BY updated_at DESC LIMIT ?"
         params.append(limit)
         
-        with self._connect() as conn:
-            rows = conn.execute(query, tuple(params)).fetchall()
+        async with self._connect() as conn:
+            async with conn.execute(query, tuple(params)) as cursor:
+                rows = await cursor.fetchall()
         return [self._row_to_fact(row) for row in rows]
 
-    def search_facts(self, query: str, *, limit: int = 200, active_only: bool = True) -> list[MemoryFact]:
+    async def search_facts(self, query: str, *, limit: int = 200, active_only: bool = True) -> list[MemoryFact]:
         tokens = self._tokenize(query)
         if not tokens:
             return []
@@ -176,8 +194,8 @@ class GraphMemoryStore:
             
         params.append(limit)
         
-        with self._connect() as conn:
-            rows = conn.execute(
+        async with self._connect() as conn:
+            async with conn.execute(
                 f"""
                 SELECT entity1, relation, entity2, status, created_at, updated_at
                 FROM memory_facts
@@ -186,22 +204,23 @@ class GraphMemoryStore:
                 LIMIT ?
                 """,
                 tuple(params),
-            ).fetchall()
+            ) as cursor:
+                rows = await cursor.fetchall()
         return [self._row_to_fact(row) for row in rows]
 
-    def query_entity(self, entity: str, *, limit: int = 200) -> list[str]:
-        facts = self.fetch_facts_for_entity(entity, limit=limit, active_only=True)
+    async def query_entity(self, entity: str, *, limit: int = 200) -> list[str]:
+        facts = await self.fetch_facts_for_entity(entity, limit=limit, active_only=True)
         return [f"{fact.entity1} {fact.relation} {fact.entity2}" for fact in facts]
 
-    def build_context(self, query: str, user_id: str) -> str:
+    async def build_context(self, query: str, user_id: str) -> str:
         if not settings.memory_context_enabled:
-            return self._simple_context(user_id)
+            return await self._simple_context(user_id)
         if self._context_assembler is None:
-            return self._simple_context(user_id)
-        return self._context_assembler.build_context(query=query, user_id=user_id)
+            return await self._simple_context(user_id)
+        return await self._context_assembler.build_context(query=query, user_id=user_id)
 
-    def _simple_context(self, user_id: str) -> str:
-        facts = self.query_entity(user_id)
+    async def _simple_context(self, user_id: str) -> str:
+        facts = await self.query_entity(user_id)
         if not facts:
             return ""
         return "MEMORY CONTEXT:\n- " + "\n- ".join(facts)
@@ -210,28 +229,29 @@ class GraphMemoryStore:
         directory = os.path.dirname(self.db_path)
         if directory:
             os.makedirs(directory, exist_ok=True)
-        with self._connect() as conn:
+        conn = sqlite3.connect(self.db_path)
+        try:
             conn.execute("PRAGMA journal_mode=WAL;")
             conn.execute("PRAGMA synchronous=NORMAL;")
             conn.executescript(SCHEMA_SQL)
-            
-            # Hot-patch schema upgrade for existing databases MUST happen before INDEX_SQL
             try:
                 conn.execute("ALTER TABLE memory_facts ADD COLUMN status TEXT DEFAULT 'ACTIVE'")
             except sqlite3.OperationalError:
-                pass # Column already exists!
-                
+                pass
             conn.executescript(INDEX_SQL)
+            conn.commit()
+        finally:
+            conn.close()
 
-    def add_routing_example(self, query: str, category: str, domain: str) -> None:
+    async def add_routing_example(self, query: str, category: str, domain: str) -> None:
         """Stores a historical ticket/query to be used for dynamic few-shot routing."""
         q = (query or "").strip().lower()
         if not q or not category or not domain:
             raise ValueError("query, category, and domain are required.")
             
         now = self._utc_now()
-        with self._connect() as conn:
-            conn.execute(
+        async with self._connect() as conn:
+            await conn.execute(
                 """
                 INSERT INTO routing_examples (id, query, category, domain, created_at)
                 VALUES (?, ?, ?, ?, ?)
@@ -242,20 +262,22 @@ class GraphMemoryStore:
                 """,
                 (uuid4().hex, q, category, domain, now.isoformat()),
             )
-            conn.commit()
+            await conn.commit()
 
-    def get_routing_examples(self) -> list[dict]:
+    async def get_routing_examples(self) -> list[dict]:
         """Fetches all routing examples from the database."""
-        with self._connect() as conn:
-            rows = conn.execute("SELECT query, category, domain FROM routing_examples").fetchall()
+        async with self._connect() as conn:
+            async with conn.execute("SELECT query, category, domain FROM routing_examples") as cursor:
+                rows = await cursor.fetchall()
         return [{"query": row["query"], "category": row["category"], "domain": row["domain"]} for row in rows]
 
-    def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(self.db_path, check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        return conn
+    @contextlib.asynccontextmanager
+    async def _connect(self):
+        async with aiosqlite.connect(self.db_path) as conn:
+            conn.row_factory = aiosqlite.Row
+            yield conn
 
-    def _row_to_fact(self, row: sqlite3.Row) -> MemoryFact:
+    def _row_to_fact(self, row: Any) -> MemoryFact:
         # Fallback for 'status' in case the database was just migrated
         status = row["status"] if "status" in row.keys() else 'ACTIVE'
         return MemoryFact(
@@ -267,13 +289,13 @@ class GraphMemoryStore:
             updated_at=self._parse_datetime(row["updated_at"]),
         )
 
-    def _insert_audit_event(self, conn, *, event_type, entity1, relation, entity2, metadata):
-        conn.execute(
+    async def _insert_audit_event(self, conn, *, event_type, entity1, relation, entity2, metadata):
+        await conn.execute(
             "INSERT INTO memory_audit_events (id, event_type, entity1, relation, entity2, metadata, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
             (uuid4().hex, event_type, entity1, relation, entity2, json.dumps(metadata), self._utc_now().isoformat()),
         )
 
-    def _maybe_prune(self, conn, now):
+    async def _maybe_prune(self, conn, now):
         pass # Simplified for brevity
 
     def _get_last_pruned_at(self, conn):

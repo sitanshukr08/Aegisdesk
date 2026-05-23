@@ -50,7 +50,7 @@ class RecursiveContextAssembler:
         self.expansion_depth = max(expansion_depth, 0)
         self.max_subqueries = max(max_subqueries, 1)
 
-    def build_context(self, query: str, user_id: str) -> str:
+    async def build_context(self, query: str, user_id: str) -> str:
         normalized_query = (query or "").strip()
         normalized_user = (user_id or "").strip().lower()
         subqueries = self._decompose(normalized_query, normalized_user)
@@ -59,13 +59,13 @@ class RecursiveContextAssembler:
 
         # 1. Fetch User Entrypoints
         if normalized_user:
-            for fact in self.store.fetch_facts_for_entity(normalized_user, limit=self.max_facts * 3):
+            for fact in await self.store.fetch_facts_for_entity(normalized_user, limit=self.max_facts * 3):
                 candidate = self._candidate_from_fact(fact, tokens=set(), user_id=normalized_user, weight=0.8)
                 self._upsert_candidate(candidates, candidate)
 
         # 2. Fetch Query Entrypoints
         for subquery in subqueries:
-            facts = self.store.search_facts(subquery.query, limit=self.max_facts * 5)
+            facts = await self.store.search_facts(subquery.query, limit=self.max_facts * 5)
             tokens = set(self._tokenize(subquery.query))
             for fact in facts:
                 candidate = self._candidate_from_fact(
@@ -80,7 +80,7 @@ class RecursiveContextAssembler:
             return ""
 
         # 3. Graph Expansion (Traverse connections)
-        expanded = self._expand_candidates(candidates.values())
+        expanded = await self._expand_candidates(candidates.values())
         for candidate in expanded:
             self._upsert_candidate(candidates, candidate)
 
@@ -146,14 +146,14 @@ class RecursiveContextAssembler:
             score=score,
         )
 
-    def _expand_candidates(self, candidates: Iterable[Candidate]) -> list[Candidate]:
+    async def _expand_candidates(self, candidates: Iterable[Candidate]) -> list[Candidate]:
         if self.expansion_depth <= 0: return []
         seeds = sorted(candidates, key=lambda item: item.score, reverse=True)[:3]
         expanded: list[Candidate] = []
         for seed in seeds:
             entities = {seed.entity1, seed.entity2}
             for entity in entities:
-                for fact in self.store.fetch_facts_for_entity(entity, limit=self.max_facts * 2):
+                for fact in await self.store.fetch_facts_for_entity(entity, limit=self.max_facts * 2):
                     expanded.append(
                         Candidate(
                             entity1=fact.entity1, relation=fact.relation, entity2=fact.entity2,

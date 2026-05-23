@@ -102,8 +102,9 @@ Unlike systems that lose context on reboot, AegisDesk uses a custom **SQLite-bac
 ### ⚡ Server-Sent Events (SSE) Streaming API
 - FastAPI backend with native `text/event-stream` responses for real-time, ChatGPT-like UX.
 - JWT Authentication and Role-Based Access Control (RBAC) on all endpoints.
-- Global `cachetools.TTLCache` prevents memory leaks from long-running sessions.
-- CrossEncoder inference is fully decoupled from the ASGI event loop via `asyncio.to_thread`, guaranteeing zero deadlocks under high concurrent load.
+- **Context-Aware Global Caching:** Utilizes a dynamic TTLCache key that blends query hashes with user-specific state mutations, eliminating stale responses and cache stampedes without losing performance.
+- **Thread-Safe Concurrency:** Strict `asyncio.Semaphore` locks prevent OS file handle exhaustion and SQLite `database locked` errors during heavy parallel checkpointing.
+- **Non-Blocking Architecture:** CrossEncoder inference is fully decoupled from the ASGI event loop via `asyncio.to_thread`, guaranteeing zero deadlocks and zero event loop saturation under high concurrent load.
 
 ### 🛡️ Zero-Trust Security Protocols
 - **RCE Prevention** — `shell=True` is explicitly disabled. All OS inputs are stripped of shell metacharacters (`&`, `|`, `;`, `$`, `<`).

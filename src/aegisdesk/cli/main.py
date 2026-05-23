@@ -303,27 +303,31 @@ def memory_list(limit: int = typer.Option(50, help="Number of facts to list")):
     
     console.print(f"\n[bold magenta]--- Semantic Graph Memory (Top {limit}) ---[/bold magenta]")
     
-    with graph_db._connect() as conn:
-        rows = conn.execute(
-            "SELECT entity1, relation, entity2, status FROM memory_facts ORDER BY updated_at DESC LIMIT ?", 
-            (limit,)
-        ).fetchall()
-        
-    if not rows:
-        console.print("[dim]No memory facts found.[/dim]")
-        return
-        
-    for r in rows:
-        status_color = "green" if r["status"] == "ACTIVE" else "red"
-        strike = "[strike]" if r["status"] != "ACTIVE" else ""
-        strike_end = "[/strike]" if r["status"] != "ACTIVE" else ""
-        
-        console.print(
-            f"{strike}[{status_color}]{r['entity1']}[/{status_color}] "
-            f"--[bold yellow]{r['relation']}[/bold yellow]--> "
-            f"[{status_color}]{r['entity2']}[/{status_color}]{strike_end} "
-            f"[dim]({r['status']})[/dim]"
-        )
+    async def _run():
+        async with graph_db._connect() as conn:
+            async with conn.execute(
+                "SELECT entity1, relation, entity2, status FROM memory_facts ORDER BY updated_at DESC LIMIT ?", 
+                (limit,)
+            ) as cursor:
+                rows = await cursor.fetchall()
+            
+        if not rows:
+            console.print("[dim]No memory facts found.[/dim]")
+            return
+            
+        for r in rows:
+            status_color = "green" if r["status"] == "ACTIVE" else "red"
+            strike = "[strike]" if r["status"] != "ACTIVE" else ""
+            strike_end = "[/strike]" if r["status"] != "ACTIVE" else ""
+            
+            console.print(
+                f"{strike}[{status_color}]{r['entity1']}[/{status_color}] "
+                f"--[bold yellow]{r['relation']}[/bold yellow]--> "
+                f"[{status_color}]{r['entity2']}[/{status_color}]{strike_end} "
+                f"[dim]({r['status']})[/dim]"
+            )
+            
+    asyncio.run(_run())
 
 
 @app.command(name="tickets-list")
@@ -348,14 +352,17 @@ def teach_router(query: str, category: str, domain: str):
     Example: aegisdesk teach-router "Deploy to AWS" it_support cloud_integrations
     """
     from app.memory.graph_store import graph_db
-    try:
-        graph_db.add_routing_example(query, category, domain)
-        console.print(f"[bold green]Successfully taught router:[/bold green] '{query}' -> {category}/{domain}")
-        # Clear the singleton so it reloads from DB next time
-        from app.rag import pipeline
-        pipeline._ROUTER_MODEL = None
-    except Exception as e:
-        console.print(f"[bold red]Failed to teach router:[/bold red] {e}")
+    async def _run():
+        try:
+            await graph_db.add_routing_example(query, category, domain)
+            console.print(f"[bold green]Successfully taught router:[/bold green] '{query}' -> {category}/{domain}")
+            # Clear the singleton so it reloads from DB next time
+            from app.rag import pipeline
+            pipeline._ROUTER_MODEL = None
+        except Exception as e:
+            console.print(f"[bold red]Failed to teach router:[/bold red] {e}")
+            
+    asyncio.run(_run())
 
 @app.command()
 def author():

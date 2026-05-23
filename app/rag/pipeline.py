@@ -41,34 +41,51 @@ _ROUTER_MODEL: TextEmbedding | None = None
 _INTENT_VECTORS: np.ndarray | None = None
 _ROUTER_META: list[dict] | None = None
 
-def get_router() -> tuple[TextEmbedding, np.ndarray, list[dict]]:
-    global _ROUTER_MODEL, _INTENT_VECTORS, _ROUTER_META
-    if _ROUTER_MODEL is None:
-        logger.info("Loading FastEmbed model for semantic routing...")
-        _ROUTER_MODEL = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+def get_router():
+    # Deprecated sync wrapper, use async_get_router
+    pass
+
+_ROUTER_LOCKS = {}
+
+def _load_intents_db():
+    corpus = []
+    meta = []
+    for item in INTENT_CLASSES:
+        corpus.append(item["keywords"])
+        meta.append({"category": item["category"], "domain": item["domain"]})
+    return corpus, meta
+
+async def async_get_router() -> tuple[TextEmbedding, np.ndarray, list[dict]]:
+    global _ROUTER_MODEL, _INTENT_VECTORS, _ROUTER_META, _ROUTER_LOCKS
+    loop = asyncio.get_running_loop()
+    if loop not in _ROUTER_LOCKS:
+        _ROUTER_LOCKS[loop] = asyncio.Lock()
         
-        # Base static corpus
-        corpus = []
-        meta = []
-        for item in INTENT_CLASSES:
-            corpus.append(item["keywords"])
-            meta.append({"category": item["category"], "domain": item["domain"]})
-            
-        # Dynamic few-shot examples from DB
-        try:
-            from app.memory.graph_store import graph_db
-            examples = graph_db.get_routing_examples()
-            for ex in examples:
-                corpus.append(ex["query"])
-                meta.append({"category": ex["category"], "domain": ex["domain"]})
-        except Exception as e:
-            logger.error(f"Failed to load dynamic routing examples: {e}")
-            
-        _INTENT_VECTORS = np.array(list(_ROUTER_MODEL.embed(corpus)))
-        _ROUTER_META = meta
+    if _ROUTER_META is None:
+        async with _ROUTER_LOCKS[loop]:
+            if _ROUTER_META is None:
+                logger.info("Loading FastEmbed model for semantic routing...")
+                model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+                
+                # Base static corpus
+                corpus, meta = _load_intents_db()
+                    
+                # Dynamic few-shot examples from DB
+                try:
+                    from app.memory.graph_store import graph_db
+                    examples = await graph_db.get_routing_examples()
+                    for ex in examples:
+                        corpus.append(ex["query"])
+                        meta.append({"category": ex["category"], "domain": ex["domain"]})
+                except Exception as e:
+                    logger.error(f"Failed to load dynamic routing examples: {e}")
+                    
+                _ROUTER_MODEL = model
+                _INTENT_VECTORS = np.array(list(_ROUTER_MODEL.embed(corpus)))
+                _ROUTER_META = meta
     return _ROUTER_MODEL, _INTENT_VECTORS, _ROUTER_META
 
-def analyze_intent(query: str, history: list) -> dict:
+async def analyze_intent(query: str, history: list) -> dict:
     """Classifies the query offline using SentenceTransformer (Zero-Token)."""
     try:
         # Hardcoded direct answers
@@ -77,7 +94,7 @@ def analyze_intent(query: str, history: list) -> dict:
             return {"category": "it_support", "domain": "web_scraping", "direct_response": None}
             
         # Semantic Routing using Singleton Model
-        model, intent_vectors, router_meta = get_router()
+        model, intent_vectors, router_meta = await async_get_router()
         query_vec = np.array(list(model.embed([q_lower])))
         
         # Calculate cosine similarity manually since vectors are normalized by default

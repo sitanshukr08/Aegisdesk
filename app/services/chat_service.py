@@ -30,7 +30,7 @@ async def process_user_query(session_id: str, user_id: str, raw_q: str):
         yield {"chunk": "Please provide a valid question.", "meta": meta}
         return
     
-    intent = analyze_intent(session_id, clean_q)
+    intent = await analyze_intent(session_id, clean_q)
     print(f"\n[ROUTER] Classified as: {intent.get('category')}")
     
     if intent.get("category") in ["greeting", "out_of_scope"]:

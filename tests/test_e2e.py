@@ -15,7 +15,7 @@ async def test_e2e_network_diagnostics_happy_path():
     user_query = "My internet is down, ping the gateway."
     
     # 1. Verify the local MiniLM Semantic Router functions properly
-    intent = analyze_intent(user_query, [])
+    intent = await analyze_intent(user_query, [])
     assert intent["domain"] == "network_diagnostics"
     
     # 2. Execute the full RAG Pipeline with mocked LLM to prevent API calls during CI

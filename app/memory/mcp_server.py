@@ -5,21 +5,21 @@ from app.memory.graph_store import graph_db
 mcp = FastMCP("AegisDesk Graph Memory")
 
 @mcp.tool()
-def extract_and_store_fact(entity1: str, relation: str, entity2: str) -> str:
+async def extract_and_store_fact(entity1: str, relation: str, entity2: str) -> str:
     """
     Store a new relationship in the memory graph.
     Example: entity1="aryan", relation="HAS_ISSUE", entity2="bsod_critical_process_died"
     """
-    graph_db.add_fact(entity1, relation, entity2)
+    await graph_db.add_fact(entity1, relation, entity2)
     return f"Successfully stored memory: {entity1} {relation} {entity2}"
 
 @mcp.tool()
-def query_user_memory(user_id: str) -> str:
+async def query_user_memory(user_id: str) -> str:
     """
     Retrieve all known historical facts and context about a specific user.
     Use this before answering to understand their past issues, hardware, and access rights.
     """
-    facts = graph_db.query_entity(user_id)
+    facts = await graph_db.query_entity(user_id)
     if not facts:
         return f"No memory found for user: {user_id}"
     

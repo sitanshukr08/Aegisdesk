@@ -2,9 +2,9 @@ from app.api.endpoints import get_cache_key
 
 
 def test_cache_key_generation():
-    key1 = get_cache_key("How do I connect to VPN?", "aryan")
-    key2 = get_cache_key("how do I connect to vpn?   ", "aryan")
-    key3 = get_cache_key("How do I connect to VPN?", "admin")
+    key1 = get_cache_key("How do I connect to VPN?", "session123", "user1")
+    key2 = get_cache_key("HOW DO I CONNECT TO VPN?  ", "session123", "user1")
+    key3 = get_cache_key("How do I connect to VPN?", "session456", "admin")
     
     # Test 1: Cache keys must be case-insensitive and ignore trailing spaces
     assert key1 == key2

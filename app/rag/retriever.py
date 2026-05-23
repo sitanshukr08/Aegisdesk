@@ -22,7 +22,7 @@ def get_reranker():
 async def get_context(user_id: str, original_q: str, expanded_q: str):
     try:
         user_memory = ""
-        memory_context = graph_db.build_context(original_q, user_id)
+        memory_context = await graph_db.build_context(original_q, user_id)
         if memory_context:
             user_memory = f"{memory_context}\n\n"
             logger.debug(f"Injected memory context for {user_id}!")
@@ -37,7 +37,10 @@ async def get_context(user_id: str, original_q: str, expanded_q: str):
         
         if not unique_texts:
             if user_memory:
-                return user_memory, 0.90
+                reranker = get_reranker()
+                raw_scores = await asyncio.to_thread(lambda: list(reranker.rerank(expanded_q, [user_memory])))
+                prob = float(1 / (1 + np.exp(-np.array(raw_scores)))[0])
+                return user_memory, prob
             return "", 0.0
             
         # CRITICAL FIX: Offload heavy ONNX inference to a worker thread!
@@ -65,7 +68,10 @@ async def get_context(user_id: str, original_q: str, expanded_q: str):
         
         if not final_texts:
             if user_memory:
-                return user_memory, 0.90
+                reranker = get_reranker()
+                raw_scores = await asyncio.to_thread(lambda: list(reranker.rerank(expanded_q, [user_memory])))
+                prob = float(1 / (1 + np.exp(-np.array(raw_scores)))[0])
+                return user_memory, prob
             return "", 0.0 
 
         context = user_memory + "KNOWLEDGE BASE DOCUMENTS:\n" + "\n---\n".join(final_texts)
