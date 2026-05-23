@@ -42,10 +42,10 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding='utf-8')
     except Exception:
         pass
+import json
 import warnings
 
 from dotenv import load_dotenv
-import json
 
 # Suppress LangChain and Google GenAI deprecation warnings for a clean CLI experience
 warnings.filterwarnings("ignore", category=DeprecationWarning)

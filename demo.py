@@ -1,10 +1,12 @@
 import asyncio
+
 from src.aegisdesk.core.pipeline import execute_rag_pipeline
 from src.aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.demo")
 
 import uuid
+
 
 async def run_scenario(name, query):
     session_id = f"test_session_{uuid.uuid4().hex[:8]}"

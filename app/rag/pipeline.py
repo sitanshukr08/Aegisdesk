@@ -1,4 +1,6 @@
 
+import asyncio
+
 import numpy as np
 from fastembed import TextEmbedding
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -8,7 +10,6 @@ from src.aegisdesk.core.llm_factory import get_llm
 from src.aegisdesk.core.tools import IT_SUPPORT_TOOLS
 from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
 from src.aegisdesk.observability.logger import get_logger
-import asyncio
 
 logger = get_logger("aegisdesk.pipeline")
 
