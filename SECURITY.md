@@ -14,7 +14,7 @@ AegisDesk is built from the ground up for Enterprise Zero-Trust environments. Th
 
 ### 3. Denial of Wallet & Infinite Loops
 * **Recursion Capping**: The LangGraph Supervisor explicitly counts the number of recursive `tool_calls` in a single session.
-* **Hard Interrupt**: If the agent attempts `n > 3` loops without producing an answer, the execution is halted and the ticket is escalated to a human.
+* **Hard Interrupt**: If the agent attempts `n >= 5` loops without producing an answer, the execution is halted and the ticket is escalated to a human.
 
 ### 4. Blind Execution Prevention (Human-in-the-Loop)
 * **Destructive Tools**: Tools like `kill_process` and `start_process` are classified as Dangerous.

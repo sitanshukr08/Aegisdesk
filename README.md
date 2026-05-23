@@ -9,7 +9,7 @@
 [![ChromaDB](https://img.shields.io/badge/VectorDB-ChromaDB-purple.svg)](https://www.trychroma.com/)
 [![Security](https://img.shields.io/badge/Security-Enterprise%20Grade-red.svg)]()
 [![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Portfolio%20Demo-lightgrey.svg)]()
-
+[![CI](https://github.com/sitanshukr08/Aegisdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/sitanshukr08/Aegisdesk/actions)
 ---
 
 AegisDesk is a **next-generation, multi-agent AI system** purpose-built for Enterprise IT Service Desks. It goes far beyond conventional RAG chatbots by combining a deterministic intent router, an ACID-compliant semantic graph memory, and a hardened security layer — delivering sub-second responses while protecting mission-critical infrastructure from hallucination and abuse.
@@ -81,7 +81,7 @@ User Query
                └───────────────────────────────┘
 ```
 
-The LangGraph Supervisor orchestrates all agent activity. Recursive tool calls are capped at `n=3` to prevent runaway loops and protect your API budget — any breach triggers escalation to a human IT agent.
+The LangGraph Supervisor orchestrates all agent activity. Recursive tool calls are capped at `n=5` to prevent runaway loops and protect your API budget — any breach triggers escalation to a human IT agent.
 
 ---
 
@@ -108,7 +108,7 @@ Unlike systems that lose context on reboot, AegisDesk uses a custom **SQLite-bac
 ### 🛡️ Zero-Trust Security Protocols
 - **RCE Prevention** — `shell=True` is explicitly disabled. All OS inputs are stripped of shell metacharacters (`&`, `|`, `;`, `$`, `<`).
 - **SSRF Mitigation** — All web scraper requests undergo pre-flight DNS resolution. Loopback, link-local, or private subnet targets trigger an immediate block.
-- **Denial-of-Wallet Protection** — LangGraph Supervisor counts recursive `tool_calls`; infinite loops are caught at `n=3` and escalated to a human.
+- **Denial-of-Wallet Protection** — LangGraph Supervisor counts recursive `tool_calls`; infinite loops are caught at `n=5` and escalated to a human.
 - **Human-in-the-Loop** — Pipeline uses `interrupt_before=["dangerous_tools"]` so critical OS commands are never executed blindly.
 
 ### 💻 Rich CLI Interface
@@ -286,7 +286,7 @@ AegisDesk is hardened against common Red Team attack vectors:
 |---|---|
 | Remote Code Execution (RCE) | `shell=True` disabled; shell metacharacters stripped from all OS inputs |
 | Server-Side Request Forgery (SSRF) | Pre-flight DNS resolution blocks private/loopback/link-local targets |
-| Infinite Agent Loops (Denial of Wallet) | LangGraph Supervisor caps recursive `tool_calls` at `n=3`; escalates to human |
+| Infinite Agent Loops (Denial of Wallet) | LangGraph Supervisor caps recursive `tool_calls` at `n=5`; escalates to human |
 | Blind OS Command Execution | `interrupt_before=["dangerous_tools"]` enforces Human-in-the-Loop review |
 | Memory Leaks | Global `cachetools.TTLCache` with TTL-based garbage collection |
 | Async Deadlocks | CrossEncoder PyTorch inference decoupled via `asyncio.to_thread` |
