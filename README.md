@@ -191,15 +191,25 @@ AegisDesk/
 
 ### Installation
 
+The recommended way to install AegisDesk is globally via `pip` or `pipx`:
+
+```bash
+pip install aegisdesk
+# OR
+pipx install aegisdesk
+```
+
+#### Developer Installation (Source)
+
+If you want to contribute or run the test suites:
+
 ```bash
 git clone https://github.com/sitanshukr08/Aegisdesk.git
 cd Aegisdesk
 
-# Create and activate a virtual environment
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
-# Install the package in editable mode (includes dev tools)
 pip install -e ".[dev]"
 ```
 
