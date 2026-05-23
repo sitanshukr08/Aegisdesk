@@ -17,6 +17,7 @@ typing.ForwardRef._evaluate = _evaluate_patch
 
 # Transformers import hangs on Windows Python 3.12 due to packages_distributions()
 import importlib.metadata
+
 _orig_pd = getattr(importlib.metadata, "packages_distributions", None)
 if _orig_pd:
     def _fast_pd():
@@ -24,18 +25,16 @@ if _orig_pd:
     importlib.metadata.packages_distributions = _fast_pd
 # -----------------------------------------
 
+import asyncio
 import os
 import sys
-import asyncio
-import io
 from pathlib import Path
-import os
+
 os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
-from rich.markdown import Markdown
 
 if sys.platform == "win32":
     try:
@@ -43,8 +42,10 @@ if sys.platform == "win32":
         sys.stderr.reconfigure(encoding='utf-8')
     except Exception:
         pass
-from dotenv import load_dotenv
 import warnings
+
+from dotenv import load_dotenv
+import json
 
 # Suppress LangChain and Google GenAI deprecation warnings for a clean CLI experience
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -57,6 +58,7 @@ sys.path.insert(0, project_root)
 
 from src.aegisdesk.core.ingestion import process_file_to_chroma
 from src.aegisdesk.core.pipeline import execute_rag_pipeline
+
 # ------------------------
 
 app = typer.Typer(
@@ -248,7 +250,7 @@ def chat(
                 # Await the background task so we don't close the event loop prematurely
                 try:
                     await memory_task
-                except Exception as e:
+                except Exception:
                     pass
                 console.print("\n")
             
@@ -333,7 +335,7 @@ def tickets_list():
         return
         
     console.print("\n[bold cyan]--- IT Support Tickets ---[/bold cyan]")
-    with open(ticket_file, "r") as f:
+    with open(ticket_file) as f:
         for line in f:
             if not line.strip(): continue
             t = json.loads(line.strip())

@@ -1,43 +1,39 @@
 version: '3.8'
 
 services:
-  aegisdesk-api:
-    build:
+  # The AegisDesk FastAPI Backend & LangGraph Runner
+  api:
+    build: 
       context: .
       dockerfile: Dockerfile
-    image: aegisdesk-api:latest
+    image: aegisdesk:latest
     container_name: aegisdesk_api
     ports:
       - "8000:8000"
     environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
+      # Pass through environment variables from the host's .env file
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LLM_PROVIDER=${LLM_PROVIDER:-groq}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change_this_in_production}
-      - MAX_TOOL_RECURSION=${MAX_TOOL_RECURSION:-5}
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-default_insecure_secret_for_local_testing}
+      - CHROMA_HOST=chromadb
+      - CHROMA_PORT=8000
     volumes:
-      # Persist ChromaDB Vector Store
-      - ./chroma_db:/code/chroma_db
-      # Persist SQLite Checkpoint Memory
-      - ./data:/code/data
+      # Mount the data directory so SQLite Semantic Graph and logs persist across restarts
+      - ./data:/app/data
+    depends_on:
+      - chromadb
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    # Drop root capabilities inside the container
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_RAW        # Required for ping / ICMP
-      - NET_ADMIN      # Required for interface enumeration
 
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    container_name: aegisdesk_jaeger
+  # ChromaDB Vector Store for RAG Document Retrieval
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: aegisdesk_chroma
     ports:
-      - "16686:16686" # Web UI
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
+      - "8001:8000"
+    volumes:
+      # Persist Chroma embeddings
+      - chromadata:/chroma/chroma
     restart: unless-stopped
+
+volumes:
+  chromadata:

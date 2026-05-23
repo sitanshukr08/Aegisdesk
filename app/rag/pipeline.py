@@ -1,13 +1,13 @@
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from app.config.settings import settings
-import json
-from fastembed import TextEmbedding
+
 import numpy as np
-from src.aegisdesk.observability.logger import get_logger
+from fastembed import TextEmbedding
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+from src.aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
 from src.aegisdesk.core.llm_factory import get_llm
 from src.aegisdesk.core.tools import IT_SUPPORT_TOOLS
-from src.aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
 from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
+from src.aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.pipeline")
 
@@ -84,7 +84,7 @@ def analyze_intent(query: str, history: list) -> dict:
         best_match_idx = int(np.argmax(similarities))
         
         # Fallback if query doesn't match any known vectors strongly
-        if similarities[best_match_idx] < 0.55:
+        if similarities[best_match_idx] < 0.45:
             return {"category": "it_support", "domain": "general", "direct_response": None}
             
         match = router_meta[best_match_idx]

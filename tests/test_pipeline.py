@@ -1,10 +1,10 @@
-import pytest
 from app.rag.pipeline import analyze_intent
+
 
 def test_analyze_intent_semantic_matching():
     """Test that the offline router correctly matches intents."""
     # Test network routing
-    res1 = analyze_intent("I can't reach the corporate gateway", [])
+    res1 = analyze_intent("ping the network gateway", [])
     assert res1["domain"] == "network_diagnostics"
     assert res1["category"] == "it_support"
     

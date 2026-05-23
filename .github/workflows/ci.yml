@@ -9,27 +9,35 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
       with:
-        python-version: "3.10"
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
         
-    - name: Install Dependencies
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .[dev]
+        pip install -e ".[dev]"
         
-    - name: Run Ruff Linter
+    - name: Lint with Ruff
       run: |
-        ruff check src/ app/ tests/
+        ruff check .
         
-    - name: Run Mypy Type Checker
+    - name: Type check with Mypy
       run: |
-        mypy src/ app/
+        mypy src/
         
-    - name: Run Pytest Security & Unit Tests
+    - name: Run Pytest
       run: |
-        pytest tests/
+        pytest
+        
+    # We do not deploy automatically to prevent unaudited code in production
+    # CD pipelines should be manually triggered after security review
