@@ -21,7 +21,7 @@ INTENT_CLASSES = [
     {
         "category": "it_support", 
         "domain": "network_diagnostics", 
-        "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing broken pipe gateway dns traceroute nmap packet loss subnet mask ip address port closed tcp udp proxy firewall bigfix global protect"
+        "keywords": "ping ipconfig network internet slow wifi connection vpn disconnected ethernet latency routing broken pipe gateway dns traceroute nmap packet loss subnet mask ip address port closed tcp udp proxy firewall system process task running kill close cpu memory ram speed performance check spotify taskkill"
     },
     {
         "category": "it_support", 
@@ -91,8 +91,17 @@ def analyze_intent(query: str, history: list) -> dict:
         
         direct_resp = None
         if match["category"] == "greeting":
-            direct_resp = "Hello! I am AegisDesk, your autonomous IT assistant. How can I help you today?"
-            
+            try:
+                from src.aegisdesk.core.llm_factory import get_llm
+                llm = get_llm(temperature=0.7)
+                res = llm.invoke([
+                    ("system", "You are AegisDesk, an elite autonomous IT assistant. The user is chatting or asking what you do. Respond naturally and briefly explain your capabilities (resolving IT tickets, network diagnostics, etc). Keep it to 1-2 short sentences. Do not be overly robotic."),
+                    ("human", query)
+                ])
+                direct_resp = res.content
+            except Exception:
+                direct_resp = "Hello! I am AegisDesk, your autonomous IT assistant. How can I help you today?"
+        
         return {"category": match["category"], "domain": match["domain"], "direct_response": direct_resp}
         
     except Exception as e:
@@ -123,7 +132,7 @@ def get_network_answer(query: str, context: str, history: list):
     try:
         llm = get_llm(temperature=0.0).bind_tools(IT_SUPPORT_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Network Diagnostics Agent. You have tools to run Windows OS commands. Keep your answers brief."),
+            ("system", "You are the AegisDesk Network Diagnostics Agent. You have tools to run Windows OS commands. Keep your answers brief. IMPORTANT: Before calling any tool, you MUST output a short text message explaining exactly what you are about to do and why (e.g., 'I will now run get_system_info to diagnose the lag'). When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags. If the history contains a ToolMessage with the command output, you MUST provide the final answer to the user based on that output. DO NOT call the exact same tool again."),
             MessagesPlaceholder(variable_name="history")
         ])
         return (prompt | llm).invoke({"history": history})
@@ -135,7 +144,7 @@ def get_cloud_answer(query: str, context: str, history: list):
     try:
         llm = get_llm(temperature=0.0).bind_tools(CLOUD_INTEGRATION_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Cloud Operations Agent. You manage Jira, Slack, and Okta via APIs. Keep your answers brief."),
+            ("system", "You are the AegisDesk Cloud Operations Agent. You manage Jira, Slack, and Okta via APIs. Keep your answers brief. IMPORTANT: Before calling any tool, you MUST output a short text message explaining exactly what you are about to do and why. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
             MessagesPlaceholder(variable_name="history")
         ])
         return (prompt | llm).invoke({"history": history})
@@ -147,7 +156,7 @@ def get_web_answer(query: str, context: str, history: list):
     try:
         llm = get_llm(temperature=0.0).bind_tools(WEB_SCRAPING_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem."),
+            ("system", "You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem. IMPORTANT: Before calling any tool, you MUST output a short text message explaining exactly what you are about to do and why. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
             MessagesPlaceholder(variable_name="history")
         ])
         return (prompt | llm).invoke({"history": history})

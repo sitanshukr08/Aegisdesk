@@ -84,28 +84,30 @@ class RecursiveContextAssembler:
 
         # 4. CROSS-ENCODER GRAPH RERANKING
         # Instead of just keyword matching, we semantically rank the graph paths!
-        from app.rag.retriever import reranker
+        from app.rag.retriever import get_reranker
         
         # CRITICAL FIX: Cap the number of semantic reranking candidates to 50 to prevent Timeouts!
         candidate_list = list(candidates.values())[:50]
-        pairs = [[normalized_query, f"{c.entity1} {c.relation} {c.entity2}"] for c in candidate_list]
+        docs = [f"{c.entity1} {c.relation} {c.entity2}" for c in candidate_list]
         
         try:
-            raw_scores = reranker.predict(pairs)
-            probabilities = 1 / (1 + np.exp(-raw_scores))
+            reranker = get_reranker()
+            raw_scores = list(reranker.rerank(normalized_query, docs))
+            probabilities = 1 / (1 + np.exp(-np.array(raw_scores)))
             
-            print("\n--- GRAPH SEMANTIC SCORES ---")
+            # print("\n--- GRAPH SEMANTIC SCORES ---")
             for idx, c in enumerate(candidate_list):
                 semantic_score = probabilities[idx]
                 recency_bonus = self._recency_boost(c.updated_at) * 0.15
                 c.score = float(semantic_score + recency_bonus)
                 
-                if semantic_score > 0.4:
-                    print(f"Graph Fact: {c.entity1} {c.relation} {c.entity2} | Score: {c.score:.4f}")
-            print("-----------------------------\n")
+                # if semantic_score > 0.4:
+                #    print(f"Graph Fact: {c.entity1} {c.relation} {c.entity2} | Score: {c.score:.4f}")
+            # print("-----------------------------\n")
             
         except Exception as e:
-            print(f"[GRAPH RERANKING ERROR] {e}")
+            # print(f"[GRAPH RERANKING ERROR] {e}")
+            pass
 
         # 5. Compress and Return
         ranked = sorted(candidate_list, key=lambda item: (item.score, item.updated_at), reverse=True)

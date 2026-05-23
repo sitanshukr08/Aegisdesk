@@ -28,6 +28,7 @@ def get_llm(temperature: float = 0.0, response_format: dict = None) -> BaseChatM
             return ChatGroq(
                 api_key=settings.groq_api_key,
                 model_name=settings.llm_model,
+                max_retries=1,
                 **kwargs
             )
             

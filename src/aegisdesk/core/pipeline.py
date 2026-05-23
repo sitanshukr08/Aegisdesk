@@ -11,7 +11,7 @@ from app.services.vision_service import analyze_screenshot
 async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_path: str = None, user_approval: bool = None):
     """
     Core orchestrator that runs the LangGraph State Machine.
-    Now supports HITL (Human-in-the-Loop) tool interrupts.
+    Supports Tier 3 Selective HITL (Interrupts only for dangerous_tools).
     """
     recorder.start_timer("langgraph_execution_time")
     
@@ -40,47 +40,46 @@ async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_
     try:
         final_state = None
         
-        # Open an Async SQLite connection specifically for this session!
         async with AsyncSqliteSaver.from_conn_string("data/checkpoints.sqlite") as memory:
-            # Compile the graph with memory attached to this async thread, and pause before tools run
-            app_graph = workflow.compile(checkpointer=memory, interrupt_before=["tools"])
+            # Compile the graph with Tier 3 Selective Interrupts
+            app_graph = workflow.compile(checkpointer=memory, interrupt_before=["dangerous_tools"])
             
-            if user_approval is True:
-                # Resume exactly where it left off
-                stream = app_graph.astream(None, config=config)
-            elif user_approval is False:
-                # User denied the tool. Fake a tool response so the LLM knows it was denied.
-                from langchain_core.messages import ToolMessage
-                state = await app_graph.aget_state(config)
-                last_msg = state.values["messages"][-1]
-                tool_call = last_msg.tool_calls[0]
-                denial_msg = ToolMessage(content="User DENIED permission to run this tool. Do not try again. Suggest a manual workaround.", tool_call_id=tool_call["id"])
-                
-                # Update state as if the tool node ran
-                await app_graph.aupdate_state(config, {"messages": [denial_msg]}, as_node="tools")
-                stream = app_graph.astream(None, config=config)
+            if user_approval is not None:
+                if user_approval:
+                    stream = app_graph.astream(None, config=config)
+                else:
+                    yield {"type": "content", "msg": "\n[bold red]Action Cancelled by User.[/bold red]"}
+                    return
             else:
-                # Standard first run
                 stream = app_graph.astream(initial_state, config=config)
             
             # Stream the Agent's Node Transitions
             async for output in stream:
                 for node_name, state_update in output.items():
+                    # Extract the LLM's explanation and tool intentions for transparency!
+                    if "messages" in state_update and state_update["messages"]:
+                        last_msg = state_update["messages"][-1]
+                        # If the agent output a natural language explanation, print it
+                        if getattr(last_msg, "content", "") and getattr(last_msg, "type", "") == "ai":
+                            yield {"type": "content", "msg": f"\n[dim italic]🤖 {last_msg.content}[/dim italic]\n"}
+                        # If it is about to run a tool, update the spinner status
+                        if hasattr(last_msg, "tool_calls") and last_msg.tool_calls:
+                            tool_names = [tc["name"] for tc in last_msg.tool_calls]
+                            yield {"type": "status", "msg": f"Executing: {', '.join(tool_names)}..."}
+                            continue
+                            
                     yield {"type": "status", "msg": f"Agent completed: {node_name}"}
 
-            # Check if the graph has paused due to an interrupt
             state = await app_graph.aget_state(config)
-            final_state = state.values
-            if state.next and state.next[0] == 'tools':
-                last_msg = state.values["messages"][-1]
-                tool_call = last_msg.tool_calls[0]
-                yield {
-                    "type": "interrupt", 
-                    "tool_name": tool_call["name"], 
-                    "tool_args": tool_call["args"],
-                    "msg": f"AegisDesk wants to run `{tool_call['name']}` with args `{tool_call['args']}`.\nDo you approve?"
-                }
+            
+            if state.next and "dangerous_tools" in state.next:
+                # Graph paused before dangerous tools!
+                last_msg = state.values.get("messages", [])[-1]
+                tool_names = [tc["name"] for tc in last_msg.tool_calls] if hasattr(last_msg, "tool_calls") else ["Unknown"]
+                yield {"type": "interrupt", "msg": f"AegisDesk wants to execute dangerous command(s): {', '.join(tool_names)}.\nDo you approve?"}
                 return
+                
+            final_state = state.values
         
         if final_state is None:
             yield {"type": "content", "msg": "I am unable to process your request at this time."}

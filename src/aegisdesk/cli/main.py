@@ -4,7 +4,6 @@ import typing
 
 # --- MONKEY PATCH FOR PYTHON 3.12+ BUG ---
 # Pydantic v1 is broken on Python 3.12 because the internal signature of _evaluate changed.
-# This intercepts the call and injects the missing parameters on the fly.
 _orig_evaluate = typing.ForwardRef._evaluate
 def _evaluate_patch(self, globalns, localns, *args, **kwargs):
     if "recursive_guard" not in kwargs and args:
@@ -15,6 +14,14 @@ def _evaluate_patch(self, globalns, localns, *args, **kwargs):
     except TypeError:
         return _orig_evaluate(self, globalns, localns, type_params=None, *args, **kwargs)
 typing.ForwardRef._evaluate = _evaluate_patch
+
+# Transformers import hangs on Windows Python 3.12 due to packages_distributions()
+import importlib.metadata
+_orig_pd = getattr(importlib.metadata, "packages_distributions", None)
+if _orig_pd:
+    def _fast_pd():
+        return {"transformers": ["transformers"]}
+    importlib.metadata.packages_distributions = _fast_pd
 # -----------------------------------------
 
 import os
@@ -168,6 +175,12 @@ def chat(
 ):
     """Start an interactive, persistent AegisDesk session."""
     load_dotenv()
+    
+    # CRITICAL FIX: Validate API keys before entering the REPL loop
+    if not os.getenv("GROQ_API_KEY"):
+        console.print("[bold red]❌ Critical Error:[/bold red] GROQ_API_KEY is missing from .env!")
+        raise typer.Exit(1)
+        
     console.print(Panel(
         f"[bold cyan]AegisDesk Interactive Session[/bold cyan]\n"
         f"User: [green]{user}[/green] | Session: [green]{session}[/green]\n"
@@ -183,8 +196,17 @@ def chat(
                 break
             if not query.strip():
                 continue
+            
+            # Intercept nested CLI commands so we don't confuse the semantic router
+            if query.strip().startswith("aegisdesk "):
+                import subprocess
+                subprocess.run(query.strip(), shell=True)
+                continue
                 
             async def run_pipeline():
+                from app.memory.extractor import extract_memory_background
+                memory_task = asyncio.create_task(extract_memory_background(user, query))
+                
                 user_approval = None
                 while True:
                     needs_approval = False
@@ -199,15 +221,15 @@ def chat(
                                             status.update(f"[bold cyan]Thinking... ({chunk['msg']})[/bold cyan]")
                                         elif chunk["type"] == "interrupt":
                                             status.stop()
+                                            from rich.panel import Panel
                                             console.print("\n")
                                             console.print(Panel(
-                                                f"[bold red]System Intercepted Tool Execution[/bold red]\n\n"
-                                                f"AegisDesk requires permission to proceed.\n"
+                                                f"[bold red]Tier 3 Security Guardrail Activated[/bold red]\n\n"
                                                 f"[yellow]{chunk['msg']}[/yellow]",
-                                                title="⚠️ SECURITY INTERRUPT",
+                                                title="⚠️ SELECTIVE INTERRUPT",
                                                 border_style="red"
                                             ))
-                                            user_approval = typer.confirm("Authorize this action?")
+                                            user_approval = typer.confirm("Authorize this dangerous action?")
                                             needs_approval = True
                                             return
                                         elif chunk["type"] == "content":
@@ -222,6 +244,12 @@ def chat(
                     await stream_output(user_approval)
                     if not needs_approval:
                         break
+                
+                # Await the background task so we don't close the event loop prematurely
+                try:
+                    await memory_task
+                except Exception as e:
+                    pass
                 console.print("\n")
             
             asyncio.run(run_pipeline())

@@ -11,13 +11,13 @@ from app.rag.retriever import get_context
 from app.services.webhook_service import create_support_ticket
 from app.config.settings import settings
 from src.aegisdesk.observability.logger import get_logger
-from src.aegisdesk.core.tools import IT_SUPPORT_TOOLS
+from src.aegisdesk.core.tools import SAFE_TOOLS, DANGEROUS_TOOLS
 from src.aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
 from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
 
 logger = get_logger("aegisdesk.graph")
 
-ALL_TOOLS = IT_SUPPORT_TOOLS + CLOUD_INTEGRATION_TOOLS + WEB_SCRAPING_TOOLS
+SAFE_ALL_TOOLS = SAFE_TOOLS + CLOUD_INTEGRATION_TOOLS + WEB_SCRAPING_TOOLS
 
 # 1. Define the State (Now with persistent 'messages')
 class AgentState(TypedDict):
@@ -46,7 +46,14 @@ def route_intent_node(state: AgentState):
     update = {
         "intent_category": intent.get("category"),
         "intent_domain": intent.get("domain", "general"),
-        "direct_response": intent.get("direct_response")
+        "direct_response": intent.get("direct_response"),
+        # CRITICAL FIX: Clear out volatile state keys from previous SQLite checkpoints!
+        "ticket_id": "",
+        "final_answer": "",
+        "web_answer": "",
+        "context": "",
+        "expanded_query": "",
+        "confidence": 0.0
     }
     # If the bot answers directly (like a greeting), append it to chat history
     if update["direct_response"]:
@@ -124,13 +131,25 @@ def route_after_retrieval(state: AgentState):
 def route_after_generation(state: AgentState):
     messages = state.get("messages", [])
     if messages and hasattr(messages[-1], "tool_calls") and messages[-1].tool_calls:
-        # Check for Denial of Wallet / Infinite Looping
-        tool_call_count = sum(1 for m in messages if getattr(m, "type", "") == "tool")
+        # Check for Denial of Wallet / Infinite Looping in the current turn only
+        current_turn_tools = 0
+        for m in reversed(messages):
+            m_type = getattr(m, "type", "")
+            if m_type in ("human", "user"):
+                break
+            if m_type == "tool":
+                current_turn_tools += 1
+                
         max_loops = int(os.getenv("MAX_TOOL_RECURSION", "5"))
-        if tool_call_count >= max_loops:
+        if current_turn_tools >= max_loops:
             logger.warning(f"[SECURITY] Agent hit tool loop limit ({max_loops}). Forcing escalation.")
             return "escalate"
-        return "tools"
+            
+        dangerous_names = [t.name for t in DANGEROUS_TOOLS]
+        for tc in messages[-1].tool_calls:
+            if tc["name"] in dangerous_names:
+                return "dangerous_tools"
+        return "safe_tools"
         
     ans = state.get("final_answer", "")
     if "cannot find the answer" in ans.lower(): return "escalate"
@@ -147,8 +166,9 @@ workflow.add_node("web_agent", node_web_agent)
 workflow.add_node("general_agent", node_general_agent)
 workflow.add_node("escalate", escalate_node)
 
-# Add the prebuilt ToolNode
-workflow.add_node("tools", ToolNode(ALL_TOOLS))
+# Add the prebuilt ToolNodes (Split Architecture)
+workflow.add_node("safe_tools", ToolNode(SAFE_ALL_TOOLS))
+workflow.add_node("dangerous_tools", ToolNode(DANGEROUS_TOOLS))
 
 workflow.set_entry_point("route_intent")
 
@@ -160,7 +180,7 @@ workflow.add_conditional_edges(
 )
 
 for agent in ["network_agent", "cloud_agent", "web_agent", "general_agent"]:
-    workflow.add_conditional_edges(agent, route_after_generation, {"tools": "tools", "end": END, "escalate": "escalate"})
+    workflow.add_conditional_edges(agent, route_after_generation, {"safe_tools": "safe_tools", "dangerous_tools": "dangerous_tools", "end": END, "escalate": "escalate"})
 
 def route_after_tools(state: AgentState):
     domain = state.get("intent_domain", "general")
@@ -169,7 +189,8 @@ def route_after_tools(state: AgentState):
     elif domain == "web_scraping": return "web_agent"
     else: return "general_agent"
 
-workflow.add_conditional_edges("tools", route_after_tools, {"network_agent": "network_agent", "cloud_agent": "cloud_agent", "web_agent": "web_agent", "general_agent": "general_agent"})
+workflow.add_conditional_edges("safe_tools", route_after_tools, {"network_agent": "network_agent", "cloud_agent": "cloud_agent", "web_agent": "web_agent", "general_agent": "general_agent"})
+workflow.add_conditional_edges("dangerous_tools", route_after_tools, {"network_agent": "network_agent", "cloud_agent": "cloud_agent", "web_agent": "web_agent", "general_agent": "general_agent"})
 workflow.add_edge("escalate", END)
 
 # 5. Export the uncompiled workflow!
