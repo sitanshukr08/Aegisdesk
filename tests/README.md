@@ -1,11 +1,34 @@
-# Verification Suite
-> **Enterprise Validation & Benchmarks**
+# AegisDesk Testing & Security Validation
 
-## 1. Benchmarking (`benchmark.py`)
-A rigorous 50-query stress test evaluating the Zero-Token Semantic Router. Validates sub-5ms latency and >75% strict direct-match accuracy.
+This directory contains the automated test suites for AegisDesk. Because this system is capable of executing OS-level commands and making network requests on behalf of an LLM, the testing infrastructure heavily prioritizes security boundary validation.
 
-## 2. Exploit Testing (`test_exploits.py`)
-Red-Team simulated attacks against the RCE tools (e.g. attempting to inject `&& rm -rf /`) and SSRF tools (e.g. attempting to scrape `http://169.254.169.254`).
+## 🧪 Security Test Matrix (RCE & SSRF)
 
-## 3. End-to-End (`test_e2e.py`)
-Validates the full pipeline execution from CLI input to tool response.
+The `test_exploits.py` file strictly validates our Zero-Trust architecture. We test against the following vectors:
+
+### 1. Remote Code Execution (RCE)
+We explicitly test that the `IT_SUPPORT_TOOLS` (e.g., `get_system_info`, `kill_process`) reject shell metacharacters:
+- **Command Injection**: Appending `&& calc.exe` or `; rm -rf /` must trigger a `Security Error`.
+- **Pipeline Exploitation**: Using `|` to pipe outputs into unauthorized binaries must be caught by our Regex denylist.
+- **Critical Process Protection**: Attempting to kill protected OS processes (e.g., `csrss.exe`, `lsass.exe`) must fail immediately.
+
+### 2. Server-Side Request Forgery (SSRF)
+The `WEB_SCRAPING_TOOLS` (`safe_fetch`, `scrape_web_page`) are tested against:
+- **Loopback & Localhost**: `127.0.0.1`, `::1`, `localhost`, `0.0.0.0`.
+- **Private Subnets**: `10.x.x.x`, `192.168.x.x`, `172.16.x.x`.
+- **Cloud Metadata APIs**: `169.254.169.254` (AWS/Azure IMDS).
+- **DNS Rebinding Attacks**: The test suite mocks a custom `socket.gethostbyname` resolver to simulate an IP flipping from a safe external IP to an internal IP between the pre-flight check and the actual `requests.get` call. Our custom `DNSPinnedAdapter` ensures the attack fails.
+
+## 🎭 Mocking Strategies
+
+Testing an agentic swarm asynchronously requires careful isolation:
+
+1. **LLM Mocking**: In `test_e2e.py` and `test_pipeline.py`, we do not hit real OpenAI/Groq endpoints. We use `unittest.mock.patch` to override `get_llm()` with a deterministic Mock that yields specific LangChain `AIMessage` objects (including mocked `tool_calls`).
+2. **ChromaDB Isolation**: We use an ephemeral, in-memory Chroma client for unit tests to prevent cross-test contamination and avoid dropping the real `data/` vector store.
+
+## 🚀 Running the Tests
+
+Locally (this is also run automatically by `.github/workflows/ci.yml`):
+```bash
+pytest tests/ -v
+```

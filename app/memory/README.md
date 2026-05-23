@@ -1,9 +1,25 @@
-# Graph Memory Engine (SQLite)
-> **Persistent ACID-Compliant Knowledge Graph**
+# Memory & Context Architecture
 
-Unlike traditional stateless chatbots, AegisDesk remembers users across sessions.
+The `app/memory` directory contains the state management and retrieval engines that give AegisDesk long-term contextual awareness across sessions.
 
-## Core Features
-1. **Entity-Relation Extraction**: The LLM extracts triplets (e.g., `user --[HAS_ISSUE]--> VPN`) in the background.
-2. **Dynamic Few-Shot Routing**: We store manually taught routing examples in the `routing_examples` table. On startup, these are embedded into a dense vector space to provide autonomous Zero-Token intent routing.
-3. **Pruning**: Retention jobs automatically garbage collect stale nodes.
+## 🧠 Dual-Store Architecture
+
+AegisDesk relies on a heavily decoupled memory architecture:
+1. **ChromaDB (Vector Space)**: Used for rapid semantic search over uploaded manuals, standard operating procedures, and historical resolved tickets.
+2. **SQLite (Semantic Graph)**: Used for LangGraph checkpointing (`AsyncSqliteSaver`). It provides ACID-compliant, thread-safe state persistence allowing a user to resume a ticket hours after closing their CLI/browser.
+
+## 🕸️ Waggle-Inspired Graph Traversal
+
+Unlike standard naive RAG (Retrieve-And-Generate), AegisDesk uses a deterministic graph-based retrieval pipeline inspired by Waggle/K-hop traversal models:
+
+1. **Entity Extraction**: The LLM extracts key nouns (e.g., "VPN", "Cisco AnyConnect") from the user's stream.
+2. **K-Hop Expansion**: The retriever searches the SQLite metadata graph for tickets linked to those specific entities, expanding outward up to 2 degrees (e.g., `VPN` -> `Gateway Timeout` -> `Firewall Rule #42`).
+3. **Temporal Weighting**: Tickets resolved within the last 72 hours are heavily weighted in the graph edges, ensuring the agent retrieves context relevant to ongoing, active outages.
+
+## ⚡ The CrossEncoder Injection Pipeline
+
+Once the vector and graph stores return raw chunks, we do not blindly dump them into the LLM context window (which wastes tokens and confuses the LLM).
+
+1. **Re-ranking**: We pass the chunks through a lightweight CrossEncoder (e.g., PyTorch BGE CrossEncoder).
+2. **Thresholding**: Any chunk with a relevance score `< 0.65` is aggressively pruned.
+3. **Context Injection**: The surviving, highly-dense chunks are formatted into markdown and injected into the LangGraph state (`state["context"]`), guaranteeing the LLM only hallucinates when explicitly instructed to.
