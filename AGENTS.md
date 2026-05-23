@@ -1,9 +1,9 @@
 # Agent Guide
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
 This repository is optimized for focused, low-context collaboration between humans and AI agents. Read this file before changing code or docs.

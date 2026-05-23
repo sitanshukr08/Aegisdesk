@@ -1,9 +1,9 @@
 # Context Map
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
 Use this map to load the smallest useful context for a task.

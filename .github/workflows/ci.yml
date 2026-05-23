@@ -36,6 +36,10 @@ jobs:
         mypy src/
         
     - name: Run Pytest
+      env:
+        GROQ_API_KEY: "mock_groq_key"
+        OPENAI_API_KEY: "mock_openai_key"
+        TAVILY_API_KEY: "mock_tavily_key"
       run: |
         pytest
         

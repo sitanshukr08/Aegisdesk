@@ -1,9 +1,9 @@
 # ADR 0002: SQLite Plus Chroma Persistence
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
 ## Status

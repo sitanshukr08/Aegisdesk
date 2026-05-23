@@ -1,9 +1,9 @@
 # Contributing
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
-> **Verified for AegisDesk v0.1.0 (Phase 16)**
+> **Verified for AegisDesk v0.1.6 (Phase 16)**
 
 
 AegisDesk is moving from prototype to product in small, reviewable phases. Keep changes narrow and make the review surface obvious.

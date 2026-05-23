@@ -8,7 +8,7 @@
 [![SQLite](https://img.shields.io/badge/ACID-SQLite-brightgreen.svg)](https://www.sqlite.org/)
 [![ChromaDB](https://img.shields.io/badge/VectorDB-ChromaDB-purple.svg)](https://www.trychroma.com/)
 [![Security](https://img.shields.io/badge/Security-Enterprise%20Grade-red.svg)]()
-[![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Portfolio%20Demo-lightgrey.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/sitanshukr08/Aegisdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/sitanshukr08/Aegisdesk/actions)
 ---
 
@@ -369,7 +369,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for full guidelines and see [AGENTS.md]
 
 ## Roadmap
 
-See [`docs/roadmap.md`](./docs/roadmap.md) for the full roadmap. Current version: **v0.1.0 (Phase 16)**.
+See [`docs/roadmap.md`](./docs/roadmap.md) for the full roadmap. Current version: **v0.1.6 (Phase 16)**.
 
 Planned improvements include:
 - Additional worker agents (HR, Procurement, Identity Management)
