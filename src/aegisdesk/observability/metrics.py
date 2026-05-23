@@ -1,16 +1,17 @@
 """
 Observability module for recording performance metrics.
 """
-import time
 import json
+import time
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
+
 
 class MetricsRecorder:
     def __init__(self, log_dir: str = "logs"):
         self.log_file = Path(log_dir) / "performance_metrics.jsonl"
         self.log_file.parent.mkdir(exist_ok=True)
-        self.current_metrics: Dict[str, Any] = {}
+        self.current_metrics: dict[str, Any] = {}
         
     def start_timer(self, metric_name: str):
         self.current_metrics[f"{metric_name}_start"] = time.perf_counter()

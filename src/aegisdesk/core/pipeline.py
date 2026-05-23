@@ -3,10 +3,13 @@ Core Orchestration Pipeline.
 Now powered by LangGraph Agentic Workflows & Async SQLite Persistent Memory.
 """
 import os
+
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
 from app.rag.graph import workflow
-from src.aegisdesk.observability.metrics import recorder
 from app.services.vision_service import analyze_screenshot
+from src.aegisdesk.observability.metrics import recorder
+
 
 async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_path: str = None, user_approval: bool = None):
     """

@@ -8,6 +8,7 @@ from src.aegisdesk.core.llm_factory import get_llm
 from src.aegisdesk.core.tools import IT_SUPPORT_TOOLS
 from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
 from src.aegisdesk.observability.logger import get_logger
+import asyncio
 
 logger = get_logger("aegisdesk.pipeline")
 
@@ -127,43 +128,43 @@ def expand_query(query: str, history: list) -> str:
     except Exception:
         return query
 
-def get_network_answer(query: str, context: str, history: list):
+async def get_network_answer(query: str, context: str, history: list):
     """Network Diagnostic Sub-Agent"""
     try:
         llm = get_llm(temperature=0.0).bind_tools(IT_SUPPORT_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Network Diagnostics Agent. You have tools to run Windows OS commands. Keep your answers brief. IMPORTANT: Before calling any tool, you MUST output a short text message explaining exactly what you are about to do and why (e.g., 'I will now run get_system_info to diagnose the lag'). When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags. If the history contains a ToolMessage with the command output, you MUST provide the final answer to the user based on that output. DO NOT call the exact same tool again."),
+            ("system", "You are the AegisDesk Network Diagnostics Agent. You have tools to run Windows OS commands. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. If the history contains a ToolMessage with the command output, you MUST provide the final answer to the user based on that output. DO NOT call the exact same tool again."),
             MessagesPlaceholder(variable_name="history")
         ])
-        return (prompt | llm).invoke({"history": history})
+        return await _with_retries(prompt | llm, {"history": history})
     except Exception as e:
         return _handle_agent_error(e)
 
-def get_cloud_answer(query: str, context: str, history: list):
+async def get_cloud_answer(query: str, context: str, history: list):
     """Cloud Integrations Sub-Agent"""
     try:
         llm = get_llm(temperature=0.0).bind_tools(CLOUD_INTEGRATION_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Cloud Operations Agent. You manage Jira, Slack, and Okta via APIs. Keep your answers brief. IMPORTANT: Before calling any tool, you MUST output a short text message explaining exactly what you are about to do and why. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
+            ("system", "You are the AegisDesk Cloud Operations Agent. You manage Jira, Slack, and Okta via APIs. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
             MessagesPlaceholder(variable_name="history")
         ])
-        return (prompt | llm).invoke({"history": history})
+        return await _with_retries(prompt | llm, {"history": history})
     except Exception as e:
         return _handle_agent_error(e)
 
-def get_web_answer(query: str, context: str, history: list):
+async def get_web_answer(query: str, context: str, history: list):
     """Web Scraping Sub-Agent"""
     try:
         llm = get_llm(temperature=0.0).bind_tools(WEB_SCRAPING_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem. IMPORTANT: Before calling any tool, you MUST output a short text message explaining exactly what you are about to do and why. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
+            ("system", "You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
             MessagesPlaceholder(variable_name="history")
         ])
-        return (prompt | llm).invoke({"history": history})
+        return await _with_retries(prompt | llm, {"history": history})
     except Exception as e:
         return _handle_agent_error(e)
 
-def get_general_answer(query: str, context: str, history: list):
+async def get_general_answer(query: str, context: str, history: list):
     """General Knowledge Sub-Agent (No Tools)"""
     try:
         llm = get_llm(temperature=0.0)
@@ -177,11 +178,32 @@ Context:
             ("system", sys_msg),
             MessagesPlaceholder(variable_name="history")
         ])
-        return (prompt | llm).invoke({"context": context, "history": history})
+        return await _with_retries(prompt | llm, {"context": context, "history": history})
     except Exception as e:
         return _handle_agent_error(e)
 
 def _handle_agent_error(e: Exception):
-    logger.error(f"Agent generation failed: {e}", exc_info=True)
+    logger.exception("Agent generation failed")
     from langchain_core.messages import AIMessage
-    return AIMessage(content=f"System Error: {str(e)}")
+    
+    try:
+        import groq
+        if isinstance(e, groq.RateLimitError):
+            return AIMessage(content="Service is currently experiencing high traffic. Please try again in a moment.")
+        elif isinstance(e, groq.AuthenticationError):
+            return AIMessage(content="An internal authentication error occurred. Please check system credentials.")
+    except ImportError:
+        pass
+        
+    return AIMessage(content="An internal service error occurred. The incident has been logged.")
+
+async def _with_retries(runnable, inputs, max_attempts=3):
+    import groq
+    for attempt in range(max_attempts):
+        try:
+            return await runnable.ainvoke(inputs)
+        except groq.RateLimitError as e:
+            if attempt == max_attempts - 1:
+                raise e
+            logger.warning(f"RateLimitError encountered. Retrying in {2 ** attempt}s...")
+            await asyncio.sleep(2 ** attempt)

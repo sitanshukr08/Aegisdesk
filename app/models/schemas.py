@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
 import uuid
-from typing import Optional
+
+from pydantic import BaseModel, Field
+
 
 class QueryReq(BaseModel):
     query: str = Field(..., min_length=1, max_length=1000)
@@ -13,4 +14,4 @@ class QueryRes(BaseModel):
     answer: str
     confidence: float
     escalate: bool
-    ticket_id: Optional[str] = None
+    ticket_id: str | None = None

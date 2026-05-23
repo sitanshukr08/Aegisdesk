@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta
-from app.services.auth_service import USERS_DB, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+
+from app.services.auth_service import ACCESS_TOKEN_EXPIRE_MINUTES, USERS_DB, create_access_token
 
 router = APIRouter()
 

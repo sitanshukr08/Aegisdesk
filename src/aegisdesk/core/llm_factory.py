@@ -1,4 +1,5 @@
 from langchain_core.language_models.chat_models import BaseChatModel
+
 from app.config.settings import settings
 from src.aegisdesk.observability.logger import get_logger
 

@@ -1,7 +1,10 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
 from app.rag.pipeline import analyze_intent
 from src.aegisdesk.core.pipeline import execute_rag_pipeline
+
 
 @pytest.mark.asyncio
 async def test_e2e_network_diagnostics_happy_path():

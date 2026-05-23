@@ -1,14 +1,15 @@
-from langchain_core.tools import tool
-import requests
-import socket
 import ipaddress
+import socket
 from urllib.parse import urlparse
+
+import requests
 from bs4 import BeautifulSoup
+from langchain_core.tools import tool
 from requests.adapters import HTTPAdapter
 from urllib3.util.connection import create_connection
 
-from src.aegisdesk.observability.logger import get_logger
 from app.config.settings import settings
+from src.aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.web_tools")
 

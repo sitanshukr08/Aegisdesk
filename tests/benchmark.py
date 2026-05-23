@@ -1,6 +1,7 @@
 import time
-import json
+
 from app.rag.pipeline import analyze_intent
+
 
 def run_benchmark():
     test_cases = [
@@ -102,12 +103,12 @@ def run_benchmark():
     accuracy = (correct / total) * 100
     
     print("=" * 60)
-    print(f"📊 Benchmark Results:")
+    print("📊 Benchmark Results:")
     print(f"Total Queries : {total}")
     print(f"Total Time    : {total_time:.2f}s")
     print(f"Avg Latency   : {avg_latency:.2f} ms per query")
     print(f"Accuracy      : {accuracy:.1f}% ({correct}/{total})")
-    print(f"Token Cost    : $0.00 (100% Local Inference)")
+    print("Token Cost    : $0.00 (100% Local Inference)")
 
 if __name__ == "__main__":
     run_benchmark()

@@ -1,6 +1,8 @@
-from langchain_core.tools import tool
-from src.aegisdesk.observability.logger import get_logger
 import time
+
+from langchain_core.tools import tool
+
+from src.aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.integrations")
 

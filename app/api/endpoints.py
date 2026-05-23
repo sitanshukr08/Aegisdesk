@@ -1,19 +1,18 @@
-import json
 import hashlib
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks, Depends
+import json
+
+# ------------------------
+from cachetools import TTLCache
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional
 
-from src.aegisdesk.core.pipeline import execute_rag_pipeline
-from app.services.vision_service import analyze_screenshot
-from app.memory.extractor import extract_memory_background 
+from app.memory.extractor import extract_memory_background
 
 # --- SECURITY IMPORTS ---
-from app.services.auth_service import get_current_user, require_admin, TokenData
-# ------------------------
+from app.services.auth_service import TokenData, require_admin
+from src.aegisdesk.core.pipeline import execute_rag_pipeline
 
-from cachetools import TTLCache
 router = APIRouter()
 # Prevent memory leak by caching maximum 1000 sessions for 10 minutes each
 RESPONSE_CACHE = TTLCache(maxsize=1000, ttl=600)
@@ -21,7 +20,7 @@ RESPONSE_CACHE = TTLCache(maxsize=1000, ttl=600)
 class QueryRequest(BaseModel):
     query: str
     session_id: str
-    user_approval: Optional[bool] = None
+    user_approval: bool | None = None
 
 def get_cache_key(query: str, username: str) -> str:
     return hashlib.md5(f"{username}:{query}".lower().strip().encode('utf-8')).hexdigest()
@@ -64,9 +63,10 @@ async def ingest_document(
     current_user: TokenData = Depends(require_admin) # Secure! Only Admins!
 ):
     try:
-        from app.db.vector_store import get_db
         from langchain_core.documents import Document
         from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+        from app.db.vector_store import get_db
         
         content = await file.read()
         text = content.decode("utf-8")

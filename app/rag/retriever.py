@@ -1,10 +1,12 @@
-from app.db.vector_store import get_db
-from app.config.settings import settings
-from fastembed.rerank.cross_encoder import TextCrossEncoder
+import asyncio
+
 import numpy as np
+from fastembed.rerank.cross_encoder import TextCrossEncoder
+
+from app.config.settings import settings
+from app.db.vector_store import get_db
 from app.memory.graph_store import graph_db
 from src.aegisdesk.observability.logger import get_logger
-import asyncio
 
 logger = get_logger("aegisdesk.retriever")
 

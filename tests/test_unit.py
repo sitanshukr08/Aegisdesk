@@ -1,5 +1,5 @@
-import pytest
 from app.api.endpoints import get_cache_key
+
 
 def test_cache_key_generation():
     key1 = get_cache_key("How do I connect to VPN?", "aryan")

@@ -1,10 +1,9 @@
 import asyncio
 import json
 import os
-import pickle
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -316,6 +315,7 @@ graph_db = GraphMemoryStore(
 )
 
 from app.memory.context_assembler import RecursiveContextAssembler
+
 context_assembler = RecursiveContextAssembler(
     graph_db,
     max_facts=settings.memory_context_max_facts,

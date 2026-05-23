@@ -1,19 +1,24 @@
 import os
-import sqlite3
-from typing import TypedDict, Optional, Annotated
-from langgraph.graph import StateGraph, END
+from typing import Annotated, TypedDict
+
+from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.prebuilt import ToolNode
 
-from app.rag.pipeline import analyze_intent, expand_query, get_network_answer, get_cloud_answer, get_web_answer, get_general_answer
+from app.rag.pipeline import (
+    analyze_intent,
+    expand_query,
+    get_cloud_answer,
+    get_general_answer,
+    get_network_answer,
+    get_web_answer,
+)
 from app.rag.retriever import get_context
 from app.services.webhook_service import create_support_ticket
-from app.config.settings import settings
-from src.aegisdesk.observability.logger import get_logger
-from src.aegisdesk.core.tools import SAFE_TOOLS, DANGEROUS_TOOLS
 from src.aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
+from src.aegisdesk.core.tools import DANGEROUS_TOOLS, SAFE_TOOLS
 from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
+from src.aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.graph")
 
@@ -26,17 +31,17 @@ class AgentState(TypedDict):
     query: str
     messages: Annotated[list, add_messages] # Magic LangGraph reducer
     
-    intent_category: Optional[str]
-    intent_domain: Optional[str]
-    direct_response: Optional[str]
+    intent_category: str | None
+    intent_domain: str | None
+    direct_response: str | None
     
-    expanded_query: Optional[str]
-    context: Optional[str]
+    expanded_query: str | None
+    context: str | None
     confidence: float
     
-    web_answer: Optional[str]
-    ticket_id: Optional[str]
-    final_answer: Optional[str]
+    web_answer: str | None
+    ticket_id: str | None
+    final_answer: str | None
 
 # 2. Define the Nodes
 def route_intent_node(state: AgentState):
@@ -73,30 +78,30 @@ async def retrieve_internal_node(state: AgentState):
 
 # Removed legacy search_web_node. Web scraping is now handled by node_web_agent.
 
-def node_network_agent(state: AgentState):
+async def node_network_agent(state: AgentState):
     logger.debug("[LANGGRAPH] Node: network_agent")
-    ans = get_network_answer(state["query"], state.get("context", ""), state.get("messages", []))
+    ans = await get_network_answer(state["query"], state.get("context", ""), state.get("messages", []))
     update = {"messages": [ans]}
     if not getattr(ans, "tool_calls", None): update["final_answer"] = ans.content
     return update
 
-def node_cloud_agent(state: AgentState):
+async def node_cloud_agent(state: AgentState):
     logger.debug("[LANGGRAPH] Node: cloud_agent")
-    ans = get_cloud_answer(state["query"], state.get("context", ""), state.get("messages", []))
+    ans = await get_cloud_answer(state["query"], state.get("context", ""), state.get("messages", []))
     update = {"messages": [ans]}
     if not getattr(ans, "tool_calls", None): update["final_answer"] = ans.content
     return update
 
-def node_web_agent(state: AgentState):
+async def node_web_agent(state: AgentState):
     logger.debug("[LANGGRAPH] Node: web_agent")
-    ans = get_web_answer(state["query"], state.get("context", ""), state.get("messages", []))
+    ans = await get_web_answer(state["query"], state.get("context", ""), state.get("messages", []))
     update = {"messages": [ans]}
     if not getattr(ans, "tool_calls", None): update["final_answer"] = ans.content
     return update
 
-def node_general_agent(state: AgentState):
+async def node_general_agent(state: AgentState):
     logger.debug("[LANGGRAPH] Node: general_agent")
-    ans = get_general_answer(state["query"], state.get("context", ""), state.get("messages", []))
+    ans = await get_general_answer(state["query"], state.get("context", ""), state.get("messages", []))
     update = {"messages": [ans]}
     if not getattr(ans, "tool_calls", None): update["final_answer"] = ans.content
     return update

@@ -1,9 +1,9 @@
-import jwt
 from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException, Security, Depends
+
+import jwt
+from fastapi import Depends, HTTPException, Security
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from typing import Optional
 
 # MVP Configuration (Move to settings.py in production)
 SECRET_KEY = "super-secret-enterprise-key-change-in-production"
@@ -23,7 +23,7 @@ USERS_DB = {
     "sitan": {"username": "sitan", "password": "password123", "role": "USER"}
 }
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=15))
     to_encode.update({"exp": expire})

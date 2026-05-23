@@ -3,12 +3,14 @@ Core Ingestion Logic.
 Handles reading files, chunking text, and embedding them into ChromaDB.
 """
 
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from app.db.vector_store import get_embeds
 import chromadb
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+from langchain_community.vectorstores import Chroma
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from app.config.settings import settings
+from app.db.vector_store import get_embeds
+
 
 def process_file_to_chroma(file_path: str, filename: str) -> bool:
     """Reads a file, chunks it, and saves embeddings into ChromaDB."""

@@ -1,6 +1,7 @@
 import json
-import asyncio
+
 from langchain_groq import ChatGroq
+
 from app.config.settings import settings
 from app.memory.graph_store import graph_db
 from src.aegisdesk.observability.logger import get_logger

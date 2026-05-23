@@ -1,9 +1,11 @@
-from app.utils.preprocessing import clean_text
-from app.rag.pipeline import expand_query, get_answer, analyze_intent
+from app.services.web_agent import run_web_research
+
+from app.config.settings import settings
+from app.rag.pipeline import analyze_intent, expand_query, get_answer
 from app.rag.retriever import get_context
 from app.services.webhook_service import create_support_ticket
-from app.services.web_agent import run_web_research
-from app.config.settings import settings
+from app.utils.preprocessing import clean_text
+
 
 def is_internal_query(query: str) -> bool:
     if not settings.internal_keywords:

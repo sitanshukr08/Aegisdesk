@@ -1,8 +1,11 @@
 import io
-from PIL import Image
 import warnings
+
+from PIL import Image
+
 warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai
+
 from app.config.settings import settings
 from src.aegisdesk.observability.logger import get_logger
 

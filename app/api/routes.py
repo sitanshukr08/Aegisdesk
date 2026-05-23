@@ -1,8 +1,10 @@
 import os
-from fastapi import APIRouter, HTTPException, UploadFile, File
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
+
 from app.models.schemas import QueryReq, QueryRes
-from app.services.chat_service import process_user_query
 from app.rag.ingestion import process_uploaded_file
+from app.services.chat_service import process_user_query
 
 router = APIRouter()
 

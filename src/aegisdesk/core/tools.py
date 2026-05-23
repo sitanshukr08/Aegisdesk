@@ -1,6 +1,8 @@
-import subprocess
 import re
+import subprocess
+
 from langchain_core.tools import tool
+
 from src.aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.tools")
@@ -15,7 +17,7 @@ def sanitize_input(value: str) -> str:
     destructive_patterns = r'\b(del|rmdir|rm|remove-item|format|diskpart|drop|truncate|clear-content|rd)\b'
     if re.search(destructive_patterns, value, re.IGNORECASE):
         logger.warning(f"[SECURITY] Intercepted destructive command attempt: {value}")
-        raise ValueError(f"Security Alert: Execution of destructive command patterns is strictly prohibited by MNC Policy.")
+        raise ValueError("Security Alert: Execution of destructive command patterns is strictly prohibited by MNC Policy.")
         
     return value.strip()
 

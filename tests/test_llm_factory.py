@@ -1,6 +1,8 @@
 import pytest
-from src.aegisdesk.core.llm_factory import get_llm, ConfigurationError
+
 from app.config.settings import settings
+from src.aegisdesk.core.llm_factory import ConfigurationError, get_llm
+
 
 def test_llm_factory_groq_success(monkeypatch):
     monkeypatch.setattr(settings, "llm_provider", "groq")

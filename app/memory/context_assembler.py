@@ -1,12 +1,14 @@
 import math
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Iterable
+from typing import Any
 
 # --- WAGGLE-INSPIRED EDGE ---
 # We reuse the BGE-Reranker from retriever.py to semantically score graph connections!
 import numpy as np
+
 # ----------------------------
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
@@ -105,7 +107,7 @@ class RecursiveContextAssembler:
                 #    print(f"Graph Fact: {c.entity1} {c.relation} {c.entity2} | Score: {c.score:.4f}")
             # print("-----------------------------\n")
             
-        except Exception as e:
+        except Exception:
             # print(f"[GRAPH RERANKING ERROR] {e}")
             pass
 
