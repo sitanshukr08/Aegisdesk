@@ -369,8 +369,8 @@ Planned improvements include:
 ## Author
 
 **Sitanshu Kumar**
-[GitHub: @sitanshukr08](https://github.com/sitanshukr08)
-
+- **Email**: [sitanshukumar65@gmail.com](mailto:sitanshukumar65@gmail.com)
+- **GitHub**: [@sitanshukr08](https://github.com/sitanshukr08)
 ---
 
 > AegisDesk — *Turning the IT Service Desk from a cost center into an autonomous intelligence layer.*
