@@ -33,4 +33,4 @@ While AegisDesk is heavily fortified, the following enterprise features are plan
 
 If you discover a vulnerability in AegisDesk, please **do not** open a public issue.
 
-Email the maintainer at [sitanshukr08@github.com] with the subject `[SECURITY VULNERABILITY]`. We commit to a 48-hour initial response time and will coordinate a patch before public disclosure.
+Email the maintainer at [sitanshukumar65@gmail.com] with the subject `[SECURITY VULNERABILITY]`. We commit to a 48-hour initial response time and will coordinate a patch before public disclosure.
