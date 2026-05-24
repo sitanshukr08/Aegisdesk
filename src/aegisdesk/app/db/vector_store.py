@@ -26,3 +26,18 @@ def get_db():
         )
     return _global_chroma_db
 
+_global_cache_db = None
+
+def get_cache_db():
+    global _global_cache_db
+    if _global_cache_db is None:
+        client = chromadb.PersistentClient(
+            path=settings.db_path,
+            settings=Settings(anonymized_telemetry=False)
+        )
+        _global_cache_db = Chroma(
+            client=client,
+            collection_name="semantic_cache",
+            embedding_function=embeddings
+        )
+    return _global_cache_db

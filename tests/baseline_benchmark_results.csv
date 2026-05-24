@@ -1,0 +1,11 @@
+Query,Type,Latency_ms,Tokens,ToolSteps
+Why is 10.0.0.1 timing out on ...,standard,9610.121900000195,514,0
+Why is 10.0.0.2 timing out on ...,standard,4112.797799999953,538,0
+Why is 10.0.0.3 timing out on ...,standard,7725.57659999984,586,0
+Why is 10.0.0.4 timing out on ...,standard,2550.431600000138,505,0
+Why is 10.0.0.5 timing out on ...,standard,6025.1485999997385,582,0
+Why is 10.0.0.6 timing out on ...,standard,7220.30070000028,587,0
+Why is 10.0.0.7 timing out on ...,standard,8595.660999999836,544,0
+Why is 10.0.0.8 timing out on ...,standard,3727.812900000117,593,0
+Why is 10.0.0.9 timing out on ...,standard,5505.735400000049,526,0
+Why is 10.0.0.10 timing out on...,standard,2391.9080000000577,607,0

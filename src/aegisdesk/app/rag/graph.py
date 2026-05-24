@@ -44,8 +44,8 @@ class AgentState(TypedDict):
     final_answer: str | None
 
 # 2. Define the Nodes
-async def route_intent_node(state: AgentState):
-    logger.debug("[LANGGRAPH] Node: route_intent")
+async def prepare_query_node(state: AgentState):
+    logger.debug("[LANGGRAPH] Node: prepare_query")
     intent = await analyze_intent(state["query"], state.get("messages", []))
     
     update = {
@@ -60,21 +60,21 @@ async def route_intent_node(state: AgentState):
         "expanded_query": "",
         "confidence": 0.0
     }
+    
     # If the bot answers directly (like a greeting), append it to chat history
     if update["direct_response"]:
         update["messages"] = [("assistant", update["direct_response"])]
+        return update
+        
+    # If it needs retrieval (not a direct answer or escalate)
+    if update["intent_category"] not in ["greeting", "out_of_scope", "direct_answer", "escalate"]:
+        expanded = expand_query(state["query"], state.get("messages", []))
+        ctx, conf = await get_context(state["user_id"], state["query"], expanded)
+        update["expanded_query"] = expanded
+        update["context"] = ctx
+        update["confidence"] = float(conf)
         
     return update
-
-async def retrieve_internal_node(state: AgentState):
-    logger.debug("[LANGGRAPH] Node: retrieve_internal")
-    expanded = expand_query(state["query"], state.get("messages", []))
-    ctx, conf = await get_context(state["user_id"], state["query"], expanded)
-    return {
-        "expanded_query": expanded,
-        "context": ctx,
-        "confidence": float(conf)
-    }
 
 # Removed legacy search_web_node. Web scraping is now handled by node_web_agent.
 
@@ -116,13 +116,11 @@ async def escalate_node(state: AgentState):
     }
 
 # 3. Edges
-def route_after_intent(state: AgentState):
+def route_after_prepare(state: AgentState):
     cat = state.get("intent_category")
     if cat in ["greeting", "out_of_scope", "direct_answer"]: return "end"
     if cat == "escalate": return "escalate"
-    return "retrieve_internal"
-
-def route_after_retrieval(state: AgentState):
+    
     if state.get("confidence", 0.0) < 0.60: 
         logger.debug("[ROUTING] Low confidence. Escalating to web_agent.")
         return "web_agent"
@@ -163,8 +161,7 @@ def route_after_generation(state: AgentState):
 # 4. Build the Graph
 workflow = StateGraph(AgentState)
 
-workflow.add_node("route_intent", route_intent_node)
-workflow.add_node("retrieve_internal", retrieve_internal_node)
+workflow.add_node("prepare_query", prepare_query_node)
 workflow.add_node("network_agent", node_network_agent)
 workflow.add_node("cloud_agent", node_cloud_agent)
 workflow.add_node("web_agent", node_web_agent)
@@ -175,13 +172,12 @@ workflow.add_node("escalate", escalate_node)
 workflow.add_node("safe_tools", ToolNode(SAFE_ALL_TOOLS))
 workflow.add_node("dangerous_tools", ToolNode(DANGEROUS_TOOLS))
 
-workflow.set_entry_point("route_intent")
+workflow.set_entry_point("prepare_query")
 
-workflow.add_conditional_edges("route_intent", route_after_intent, {"end": END, "escalate": "escalate", "retrieve_internal": "retrieve_internal"})
 workflow.add_conditional_edges(
-    "retrieve_internal", 
-    route_after_retrieval, 
-    {"network_agent": "network_agent", "cloud_agent": "cloud_agent", "web_agent": "web_agent", "general_agent": "general_agent"}
+    "prepare_query", 
+    route_after_prepare, 
+    {"end": END, "escalate": "escalate", "network_agent": "network_agent", "cloud_agent": "cloud_agent", "web_agent": "web_agent", "general_agent": "general_agent"}
 )
 
 for agent in ["network_agent", "cloud_agent", "web_agent", "general_agent"]:

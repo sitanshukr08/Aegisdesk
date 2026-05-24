@@ -29,8 +29,8 @@ async def get_context(user_id: str, original_q: str, expanded_q: str):
             
         db = get_db()
         
-        res_orig = db.similarity_search(original_q, k=10)
-        res_exp = db.similarity_search(expanded_q, k=10)
+        res_orig = await db.asimilarity_search(original_q, k=10)
+        res_exp = await db.asimilarity_search(expanded_q, k=10)
         
         unique_docs = {doc.page_content: doc for doc in (res_orig + res_exp)}.values()
         unique_texts = [doc.page_content for doc in unique_docs]

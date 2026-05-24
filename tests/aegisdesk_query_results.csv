@@ -1,0 +1,31 @@
+Query,Type,Expected_Agent,Actual_Agent,Latency_ms,Tokens,ToolSteps,Success,RetryCount,N,Run
+Why is 10.0.0.12 timing out on...,network,network_diagnostics,web_agent,12629.484799999773,50,0,True,0,30,1
+Can you ping the secondary gat...,network,network_diagnostics,web_agent,18377.97850000061,50,0,True,0,30,1
+Run a traceroute to google.com...,network,network_diagnostics,web_agent,23634.034299999257,48,0,True,0,30,1
+Is port 443 open on 10.0.2.14?...,network,network_diagnostics,web_agent,14333.238900000651,49,0,True,0,30,1
+Check latency to the main data...,network,network_diagnostics,web_agent,12515.251199998602,42,0,True,0,30,1
+My connection to 10.0.5.10 dro...,network,network_diagnostics,web_agent,12309.651100000337,51,0,True,0,30,1
+Why is 10.0.0.101 timing out o...,network,network_diagnostics,web_agent,15623.93560000055,50,0,True,0,30,1
+Can you ping the primary firew...,network,network_diagnostics,web_agent,15646.853099999134,41,0,True,0,30,1
+Run a port scan on 10.0.1.55....,network,network_diagnostics,web_agent,22757.49519999954,48,0,True,0,30,1
+Is port 22 open on 10.0.2.22?...,network,network_diagnostics,web_agent,18847.431799998958,49,0,True,0,30,1
+Check network latency to 8.8.8...,network,network_diagnostics,web_agent,23448.993800000608,47,0,True,0,30,1
+My VPN connects but the tunnel...,network,network_diagnostics,web_agent,22775.653700000476,42,0,True,0,30,1
+I need to reset my Okta passwo...,cloud,cloud_integrations,web_agent,21603.347500000382,47,0,True,0,30,1
+Provision a new AWS EC2 instan...,cloud,cloud_integrations,web_agent,71657.2713000005,47,0,True,0,30,1
+Why is my Jira access revoked?...,cloud,cloud_integrations,web_agent,23346.62819999903,42,0,True,0,30,1
+Finance team reporting Azure c...,cloud,cloud_integrations,web_agent,23394.377300000997,43,0,True,0,30,1
+Create a new Atlassian group f...,cloud,cloud_integrations,web_agent,23365.220200001204,43,0,True,0,30,1
+Reset Okta MFA for user JSmith...,cloud,cloud_integrations,web_agent,23450.240599999233,44,0,True,0,30,1
+Check the status of the AWS RD...,cloud,cloud_integrations,web_agent,71610.95560000103,44,0,True,0,30,1
+Scale up the Azure App Service...,cloud,cloud_integrations,web_agent,71793.76880000018,42,0,True,0,30,1
+"My Jira token expired, how do ...",cloud,cloud_integrations,web_agent,23481.59990000022,48,0,True,0,30,1
+AWS billing alert received for...,cloud,cloud_integrations,web_agent,71699.89600000008,43,0,True,0,30,1
+Unlock my Okta account....,cloud,cloud_integrations,web_agent,71767.93759999964,40,0,True,0,30,1
+Create a Jira ticket for the b...,cloud,cloud_integrations,web_agent,23512.344500000836,44,0,True,0,30,1
+Where is the onboarding guide ...,web,web_agent,web_agent,71727.77270000006,45,0,True,0,30,1
+Search SharePoint for the Q3 f...,web,web_agent,web_agent,74774.92879999954,43,0,True,0,30,1
+What is the HR policy for remo...,web,web_agent,web_agent,71699.11349999893,43,0,True,0,30,1
+Find the latest corporate holi...,web,web_agent,web_agent,71827.3663,44,0,True,0,30,1
+Search the internal wiki for '...,web,web_agent,web_agent,71675.58179999833,43,0,True,0,30,1
+Where is the expense report te...,web,web_agent,web_agent,71643.09469999898,43,0,True,0,30,1

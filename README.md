@@ -12,7 +12,7 @@
 [![CI](https://github.com/sitanshukr08/Aegisdesk/actions/workflows/ci.yml/badge.svg)](https://github.com/sitanshukr08/Aegisdesk/actions)
 ---
 
-AegisDesk is a **next-generation, multi-agent AI system** purpose-built for Enterprise IT Service Desks. It goes far beyond conventional RAG chatbots by combining a deterministic intent router, an ACID-compliant semantic graph memory, and a hardened security layer — delivering sub-second responses while protecting mission-critical infrastructure from hallucination and abuse.
+AegisDesk is a **next-generation, multi-agent AI system** purpose-built for Enterprise IT Service Desks. It goes far beyond conventional RAG chatbots by combining a deterministic intent router, an ACID-compliant semantic graph memory, and a hardened security layer — trading raw response latency for security guarantees and routing accuracy to protect mission-critical infrastructure.
 
 ---
 
@@ -41,9 +41,11 @@ Traditional IT helpdesk bots suffer from three fundamental problems:
 
 | Problem | Conventional Approach | AegisDesk Approach |
 |---|---|---|
-| **Slow responses** | Single monolithic LLM call for every query | Zero-Token Semantic Router + specialist worker agents |
+| **Slow responses** | Single monolithic LLM call for every query | Zero-Token Semantic Router* + specialist worker agents |
 | **Unreliable memory** | Ephemeral context window or in-memory graphs | ACID-compliant SQLite-backed Semantic Graph |
 | **Security risk** | Unguarded tool calls & open shell access | Zero-Trust command sanitization + SSRF/RCE mitigations |
+
+* *Routing itself is zero-token; end-to-end latency scales with tool-call depth and API tier.*
 
 AegisDesk is engineered for enterprises where accuracy, auditability, and security are non-negotiable.
 
@@ -103,7 +105,7 @@ Unlike systems that lose context on reboot, AegisDesk uses a custom **SQLite-bac
 - FastAPI backend with native `text/event-stream` responses for real-time, ChatGPT-like UX.
 - JWT Authentication and Role-Based Access Control (RBAC) on all endpoints.
 - **Context-Aware Global Caching:** Utilizes a dynamic TTLCache key that blends query hashes with user-specific state mutations, eliminating stale responses and cache stampedes without losing performance.
-- **Thread-Safe Concurrency:** Strict `asyncio.Semaphore` locks prevent OS file handle exhaustion and SQLite `database locked` errors during heavy parallel checkpointing.
+- **Thread-Safe Concurrency:** Strict `asyncio.Semaphore(10)` combined with a Sliding Window Token Bucket prevents LLM API Rate Limits and OS file handle exhaustion.
 - **Non-Blocking Architecture:** CrossEncoder inference is fully decoupled from the ASGI event loop via `asyncio.to_thread`, guaranteeing zero deadlocks and zero event loop saturation under high concurrent load.
 
 ### 🛡️ Zero-Trust Security Protocols
@@ -301,7 +303,7 @@ AegisDesk is hardened against common Red Team attack vectors:
 | Infinite Agent Loops (Denial of Wallet) | LangGraph Supervisor caps recursive `tool_calls` at `n=5`; escalates to human |
 | Blind OS Command Execution | `interrupt_before=["dangerous_tools"]` enforces Human-in-the-Loop review |
 | Information Disclosure | Exception sanitization masks raw stack traces, API keys, and internal file paths |
-| API Rate Limits (429) | Native async exponential backoff prevents SSE stream deadlocks |
+| API Rate Limits (429) | Tier 3 Concurrency Throttle & Token Bucket Limiter mathematically prevents 429 API crashes |
 | Memory Leaks | Global `cachetools.TTLCache` with TTL-based garbage collection |
 | Async Deadlocks | CrossEncoder PyTorch inference decoupled via `asyncio.to_thread` |
 

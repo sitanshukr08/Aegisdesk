@@ -26,7 +26,7 @@ Status: **Completed**
 - Secured the Web Agent against Time-Of-Check to Time-Of-Use (TOCTOU) Server-Side Request Forgery via a custom `DNSPinnedAdapter` that intercepts the HTTP socket layer.
 
 ## Phase 15 - 16: Operational Ergonomics & PyPI Readiness
-Status: **Completed (May 2026)**
+Status: **Completed**
 - Shipped `docker-compose.yml` mapping persistent `~/.aegisdesk` volumes and dropping root capabilities (`cap_drop: ALL`).
 - Decoupled state from the current working directory, injected an MIT License, and prepped the CLI for PyPI deployment.
 - Proved the execution pipeline via End-to-End (`test_e2e.py`) testing.
@@ -34,7 +34,15 @@ Status: **Completed (May 2026)**
 
 ---
 
-## Phase 17: React UI Dashboard
+## Phase 17: Tier 3 Enterprise Scaling
+Status: **Completed**
+- Refactored pipeline to fully asynchronous LangGraph execution.
+- Added `ChromaDB` Semantic Response Caching to bypass LLM limits in near-constant time for redundant queries.
+- Implemented an `asyncio.Semaphore(10)` and a Sliding Window Token Bucket rate limiter, achieving 100% success rate at N=30 concurrency on constrained free-tier infrastructure.
+
+---
+
+## Phase 18: React UI Dashboard
 Status: **Planned**
 - Build a web interface that consumes the FastAPI endpoints.
 - Allow administrators to view chat histories, ticket escalations, and manually approve HITL Tool Interrupts via the UI.

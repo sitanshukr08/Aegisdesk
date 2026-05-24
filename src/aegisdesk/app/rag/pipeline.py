@@ -112,7 +112,7 @@ async def analyze_intent(query: str, history: list) -> dict:
         if match["category"] == "greeting":
             try:
                 from aegisdesk.core.llm_factory import get_llm
-                llm = get_llm(temperature=0.7)
+                llm = get_llm(temperature=0.7, tier="synthesis")
                 res = llm.invoke([
                     ("system", "You are AegisDesk, an elite autonomous IT assistant. The user is chatting or asking what you do. Respond naturally and briefly explain your capabilities (resolving IT tickets, network diagnostics, etc). Keep it to 1-2 short sentences. Do not be overly robotic."),
                     ("human", query)
@@ -133,7 +133,7 @@ def expand_query(query: str, history: list) -> str:
         recent = history[-4:] if history else []
         history_text = "\n".join([f"{m.type}: {m.content}" for m in recent]) if recent else "No history."
         
-        llm = get_llm(temperature=0.0)
+        llm = get_llm(temperature=0.0, tier="fast")
         sys_msg = f"""You are an IT query optimizer. 
         Recent chat history:
         {history_text}
@@ -149,7 +149,7 @@ def expand_query(query: str, history: list) -> str:
 async def get_network_answer(query: str, context: str, history: list):
     """Network Diagnostic Sub-Agent"""
     try:
-        llm = get_llm(temperature=0.0).bind_tools(IT_SUPPORT_TOOLS)
+        llm = get_llm(temperature=0.0, tier="fast").bind_tools(IT_SUPPORT_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are the AegisDesk Network Diagnostics Agent. You have tools to run Windows OS commands. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. If the history contains a ToolMessage with the command output, you MUST provide the final answer to the user based on that output. DO NOT call the exact same tool again."),
             MessagesPlaceholder(variable_name="history")
@@ -161,7 +161,7 @@ async def get_network_answer(query: str, context: str, history: list):
 async def get_cloud_answer(query: str, context: str, history: list):
     """Cloud Integrations Sub-Agent"""
     try:
-        llm = get_llm(temperature=0.0).bind_tools(CLOUD_INTEGRATION_TOOLS)
+        llm = get_llm(temperature=0.0, tier="fast").bind_tools(CLOUD_INTEGRATION_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are the AegisDesk Cloud Operations Agent. You manage Jira, Slack, and Okta via APIs. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
             MessagesPlaceholder(variable_name="history")
@@ -173,7 +173,7 @@ async def get_cloud_answer(query: str, context: str, history: list):
 async def get_web_answer(query: str, context: str, history: list):
     """Web Scraping Sub-Agent"""
     try:
-        llm = get_llm(temperature=0.0).bind_tools(WEB_SCRAPING_TOOLS)
+        llm = get_llm(temperature=0.0, tier="fast").bind_tools(WEB_SCRAPING_TOOLS)
         prompt = ChatPromptTemplate.from_messages([
             ("system", "You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
             MessagesPlaceholder(variable_name="history")
@@ -185,7 +185,7 @@ async def get_web_answer(query: str, context: str, history: list):
 async def get_general_answer(query: str, context: str, history: list):
     """General Knowledge Sub-Agent (No Tools)"""
     try:
-        llm = get_llm(temperature=0.0)
+        llm = get_llm(temperature=0.0, tier="synthesis")
         sys_msg = """You are the AegisDesk IT Assistant. 
 You must answer the user's query strictly using ONLY the provided context.
 If the context does not contain the answer or is irrelevant, explicitly state that you do not have that information in your knowledge base. Do not hallucinate or use outside knowledge.
