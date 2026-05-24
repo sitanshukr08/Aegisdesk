@@ -7,7 +7,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai
 
 from app.config.settings import settings
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.vision")
 

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.rag.pipeline import analyze_intent
-from src.aegisdesk.core.pipeline import execute_rag_pipeline
+from aegisdesk.core.pipeline import execute_rag_pipeline
 
 
 @pytest.mark.asyncio
@@ -23,7 +23,7 @@ async def test_e2e_network_diagnostics_happy_path():
     mock_llm_response.content = "I have successfully pinged the gateway. It is unreachable."
     mock_llm_response.tool_calls = [] # Simulate that the agent finished tool calling
     
-    with patch("src.aegisdesk.core.llm_factory.get_llm") as mock_get_llm:
+    with patch("aegisdesk.core.llm_factory.get_llm") as mock_get_llm:
         # Mock the LLM to return our static response
         mock_get_llm.return_value.invoke.return_value = mock_llm_response
         
@@ -35,3 +35,4 @@ async def test_e2e_network_diagnostics_happy_path():
                 # 3. Assert the pipeline properly encapsulated the agent's answer
                 assert "pinged the gateway" in chunk["answer"]
                 break
+

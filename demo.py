@@ -1,7 +1,7 @@
 import asyncio
 
-from src.aegisdesk.core.pipeline import execute_rag_pipeline
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.core.pipeline import execute_rag_pipeline
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.demo")
 
@@ -63,3 +63,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

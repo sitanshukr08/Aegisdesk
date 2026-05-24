@@ -6,7 +6,7 @@ from fastembed.rerank.cross_encoder import TextCrossEncoder
 from app.config.settings import settings
 from app.db.vector_store import get_db
 from app.memory.graph_store import graph_db
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.retriever")
 
@@ -82,3 +82,4 @@ async def get_context(user_id: str, original_q: str, expanded_q: str):
     except Exception as e:
         logger.error(f"Retriever error: {e}", exc_info=True)
         return "", 0.0
+

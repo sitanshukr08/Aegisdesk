@@ -15,10 +15,10 @@ from app.rag.pipeline import (
 )
 from app.rag.retriever import get_context
 from app.services.webhook_service import create_support_ticket
-from src.aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
-from src.aegisdesk.core.tools import DANGEROUS_TOOLS, SAFE_TOOLS
-from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
+from aegisdesk.core.tools import DANGEROUS_TOOLS, SAFE_TOOLS
+from aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.graph")
 

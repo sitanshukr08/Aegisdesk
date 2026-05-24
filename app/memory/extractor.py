@@ -4,7 +4,7 @@ from langchain_groq import ChatGroq
 
 from app.config.settings import settings
 from app.memory.graph_store import graph_db
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.memory")
 

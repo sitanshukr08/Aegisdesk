@@ -2,7 +2,7 @@ import time
 
 from langchain_core.tools import tool
 
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.integrations")
 
@@ -35,3 +35,4 @@ CLOUD_INTEGRATION_TOOLS = [
     update_jira_ticket,
     send_slack_message
 ]
+

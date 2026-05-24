@@ -1,7 +1,7 @@
 import asyncio
 from unittest.mock import MagicMock, patch
 import pytest
-from src.aegisdesk.core.pipeline import execute_rag_pipeline
+from aegisdesk.core.pipeline import execute_rag_pipeline
 
 @pytest.mark.asyncio
 async def test_concurrent_checkpoint_writes():
@@ -81,3 +81,4 @@ async def test_concurrent_checkpoint_writes():
         # and should not have action_cancelled. Wait, actually if we resume
         # it just runs. We can assert action_cancelled is False.
         assert not action_cancelled
+

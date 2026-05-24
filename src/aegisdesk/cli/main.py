@@ -56,8 +56,8 @@ warnings.filterwarnings("ignore", message=".*LangChainDeprecationWarning.*")
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
 sys.path.insert(0, project_root)
 
-from src.aegisdesk.core.ingestion import process_file_to_chroma
-from src.aegisdesk.core.pipeline import execute_rag_pipeline
+from aegisdesk.core.ingestion import process_file_to_chroma
+from aegisdesk.core.pipeline import execute_rag_pipeline
 
 # ------------------------
 

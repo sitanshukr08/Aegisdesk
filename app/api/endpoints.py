@@ -11,7 +11,7 @@ from app.memory.extractor import extract_memory_background
 
 # --- SECURITY IMPORTS ---
 from app.services.auth_service import TokenData, require_admin
-from src.aegisdesk.core.pipeline import execute_rag_pipeline
+from aegisdesk.core.pipeline import execute_rag_pipeline
 
 router = APIRouter()
 # Prevent memory leak by caching maximum 1000 sessions for 10 minutes each

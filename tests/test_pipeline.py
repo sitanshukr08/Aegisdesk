@@ -29,7 +29,7 @@ async def test_analyze_intent_hardcoded_direct():
     assert res["domain"] == "web_scraping"
 
 from unittest.mock import MagicMock, patch
-from src.aegisdesk.core.pipeline import execute_rag_pipeline
+from aegisdesk.core.pipeline import execute_rag_pipeline
 
 @pytest.mark.asyncio
 async def test_tool_recursion_limit(monkeypatch):
@@ -55,7 +55,7 @@ async def test_tool_recursion_limit(monkeypatch):
 
     with patch("app.rag.pipeline.get_llm", return_value=FakeLLM()):
         
-        with patch("src.aegisdesk.core.tools.run_cmd") as mock_tool:
+        with patch("aegisdesk.core.tools.run_cmd") as mock_tool:
             # Tool constantly returns transient error, forcing retry
             mock_tool.return_value = "Transient error, please retry."
             
@@ -70,3 +70,4 @@ async def test_tool_recursion_limit(monkeypatch):
             escalated = True
             
     assert escalated, "Pipeline did not gracefully escalate after hitting the tool recursion limit."
+

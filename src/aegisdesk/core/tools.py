@@ -3,7 +3,7 @@ import subprocess
 
 from langchain_core.tools import tool
 
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.tools")
 
@@ -142,3 +142,4 @@ DANGEROUS_TOOLS = [
 
 # Export this list so the LLM can bind all tools at once.
 IT_SUPPORT_TOOLS = SAFE_TOOLS + DANGEROUS_TOOLS
+

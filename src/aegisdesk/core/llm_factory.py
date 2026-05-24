@@ -1,7 +1,7 @@
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from app.config.settings import settings
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.llm_factory")
 
@@ -51,3 +51,4 @@ def get_llm(temperature: float = 0.0, response_format: dict = None) -> BaseChatM
     except ImportError as e:
         logger.error(f"Missing dependency for provider '{provider}': {e}")
         raise ConfigurationError(f"Please install the required package for provider '{provider}'")
+

@@ -5,11 +5,11 @@ import numpy as np
 from fastembed import TextEmbedding
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from src.aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
-from src.aegisdesk.core.llm_factory import get_llm
-from src.aegisdesk.core.tools import IT_SUPPORT_TOOLS
-from src.aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
-from src.aegisdesk.observability.logger import get_logger
+from aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
+from aegisdesk.core.llm_factory import get_llm
+from aegisdesk.core.tools import IT_SUPPORT_TOOLS
+from aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
+from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.pipeline")
 
@@ -111,7 +111,7 @@ async def analyze_intent(query: str, history: list) -> dict:
         direct_resp = None
         if match["category"] == "greeting":
             try:
-                from src.aegisdesk.core.llm_factory import get_llm
+                from aegisdesk.core.llm_factory import get_llm
                 llm = get_llm(temperature=0.7)
                 res = llm.invoke([
                     ("system", "You are AegisDesk, an elite autonomous IT assistant. The user is chatting or asking what you do. Respond naturally and briefly explain your capabilities (resolving IT tickets, network diagnostics, etc). Keep it to 1-2 short sentences. Do not be overly robotic."),
