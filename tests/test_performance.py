@@ -1,8 +1,8 @@
 import asyncio
 import time
 import pytest
-from app.rag.retriever import get_context
-from app.api.endpoints import health_check
+from aegisdesk.app.rag.retriever import get_context
+from aegisdesk.app.api.endpoints import health_check
 
 @pytest.mark.asyncio
 async def test_event_loop_bottleneck():
@@ -40,3 +40,4 @@ async def test_event_loop_bottleneck():
     # The health check is purely async so it should return instantly, even if a thread is busy
     max_latency = max(health_latencies)
     assert max_latency < 0.05, f"Event loop was blocked! Max latency: {max_latency*1000:.2f}ms"
+

@@ -6,7 +6,7 @@ from PIL import Image
 warnings.filterwarnings("ignore", category=FutureWarning)
 import google.generativeai as genai
 
-from app.config.settings import settings
+from aegisdesk.app.config.settings import settings
 from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.vision")
@@ -67,3 +67,4 @@ def analyze_screenshot(image_bytes: bytes, user_query: str = "") -> str:
     except Exception as e:
         logger.error(f"Gemini Vision Failed: {e}", exc_info=True)
         return user_query # Fallback to just the text if vision fails
+

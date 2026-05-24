@@ -4,9 +4,9 @@ os.environ["TRANSFORMERS_VERBOSITY"] = "error"
 
 from fastapi import FastAPI
 
-from app.api.auth import router as auth_router
-from app.api.endpoints import router as api_router
-from app.observability.tracing import setup_tracing
+from aegisdesk.app.api.auth import router as auth_router
+from aegisdesk.app.api.endpoints import router as api_router
+from aegisdesk.app.observability.tracing import setup_tracing
 
 app = FastAPI(
     title="HCLTech AI Service Desk Bot",

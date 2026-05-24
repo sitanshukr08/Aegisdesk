@@ -1,10 +1,10 @@
-from app.services.web_agent import run_web_research
+from aegisdesk.app.services.web_agent import run_web_research
 
-from app.config.settings import settings
-from app.rag.pipeline import analyze_intent, expand_query, get_answer
-from app.rag.retriever import get_context
-from app.services.webhook_service import create_support_ticket
-from app.utils.preprocessing import clean_text
+from aegisdesk.app.config.settings import settings
+from aegisdesk.app.rag.pipeline import analyze_intent, expand_query, get_answer
+from aegisdesk.app.rag.retriever import get_context
+from aegisdesk.app.services.webhook_service import create_support_ticket
+from aegisdesk.app.utils.preprocessing import clean_text
 
 
 def is_internal_query(query: str) -> bool:
@@ -77,3 +77,4 @@ async def process_user_query(session_id: str, user_id: str, raw_q: str):
         meta["escalate"] = True
         meta["ticket_id"] = await create_support_ticket(session_id, raw_q, conf)
         yield {"chunk": f"\n\nI have escalated this issue to the IT Service Desk. Your ticket reference is {meta['ticket_id']}.", "meta": meta}
+

@@ -3,7 +3,7 @@ from chromadb.config import Settings
 from langchain_chroma import Chroma
 from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 
-from app.config.settings import settings
+from aegisdesk.app.config.settings import settings
 
 embeddings = FastEmbedEmbeddings(model_name=settings.embed_model)
 
@@ -25,3 +25,4 @@ def get_db():
             embedding_function=embeddings
         )
     return _global_chroma_db
+

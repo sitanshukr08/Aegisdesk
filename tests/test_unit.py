@@ -1,4 +1,4 @@
-from app.api.endpoints import get_cache_key
+from aegisdesk.app.api.endpoints import get_cache_key
 
 
 def test_cache_key_generation():

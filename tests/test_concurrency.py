@@ -42,7 +42,7 @@ async def test_concurrent_checkpoint_writes():
 
         return session_id, chunks
 
-    with patch("app.rag.pipeline.get_llm", return_value=FakeLLM()):
+    with patch("aegisdesk.app.rag.pipeline.get_llm", return_value=FakeLLM()):
         # Pre-initialize LangGraph checkpoint tables to avoid schema lock deadlocks
         from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
         import os

@@ -5,7 +5,7 @@ from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode
 
-from app.rag.pipeline import (
+from aegisdesk.app.rag.pipeline import (
     analyze_intent,
     expand_query,
     get_cloud_answer,
@@ -13,8 +13,8 @@ from app.rag.pipeline import (
     get_network_answer,
     get_web_answer,
 )
-from app.rag.retriever import get_context
-from app.services.webhook_service import create_support_ticket
+from aegisdesk.app.rag.retriever import get_context
+from aegisdesk.app.services.webhook_service import create_support_ticket
 from aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
 from aegisdesk.core.tools import DANGEROUS_TOOLS, SAFE_TOOLS
 from aegisdesk.core.web_tools import WEB_SCRAPING_TOOLS
@@ -200,3 +200,4 @@ workflow.add_edge("escalate", END)
 
 # 5. Export the uncompiled workflow!
 # We will compile it dynamically in the pipeline so it can share the async thread!
+

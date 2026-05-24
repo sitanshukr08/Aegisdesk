@@ -5,7 +5,7 @@ from pathlib import Path
 
 import httpx
 
-from app.config.settings import settings
+from aegisdesk.app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 

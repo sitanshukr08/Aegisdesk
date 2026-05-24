@@ -1,6 +1,6 @@
 from mcp.server.fastmcp import FastMCP
 
-from app.memory.graph_store import graph_db
+from aegisdesk.app.memory.graph_store import graph_db
 
 mcp = FastMCP("AegisDesk Graph Memory")
 

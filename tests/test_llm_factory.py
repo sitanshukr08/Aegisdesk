@@ -1,6 +1,6 @@
 import pytest
 
-from app.config.settings import settings
+from aegisdesk.app.config.settings import settings
 from aegisdesk.core.llm_factory import ConfigurationError, get_llm
 
 
@@ -26,4 +26,5 @@ def test_llm_factory_unsupported_provider(monkeypatch):
     monkeypatch.setattr(settings, "llm_provider", "huggingface_local")
     with pytest.raises(ConfigurationError, match="Unsupported LLM_PROVIDER"):
         get_llm()
+
 

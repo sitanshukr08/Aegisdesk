@@ -7,10 +7,10 @@ from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Up
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.memory.extractor import extract_memory_background
+from aegisdesk.app.memory.extractor import extract_memory_background
 
 # --- SECURITY IMPORTS ---
-from app.services.auth_service import TokenData, require_admin
+from aegisdesk.app.services.auth_service import TokenData, require_admin
 from aegisdesk.core.pipeline import execute_rag_pipeline
 
 router = APIRouter()
@@ -23,7 +23,7 @@ class QueryRequest(BaseModel):
     user_id: str = "default_user"
     user_approval: bool | None = None
 
-from app.memory.graph_store import graph_db
+from aegisdesk.app.memory.graph_store import graph_db
 
 def get_cache_key(query: str, session_id: str, user_id: str) -> str:
     last_mutated = graph_db.get_last_mutated(user_id)
@@ -71,7 +71,7 @@ async def ingest_document(
         from langchain_core.documents import Document
         from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-        from app.db.vector_store import get_db
+        from aegisdesk.app.db.vector_store import get_db
         
         content = await file.read()
         text = content.decode("utf-8")
@@ -93,3 +93,4 @@ async def ingest_document(
 @router.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "HCLTech AI AegisDesk API - Secured"}
+

@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
 # Copy application files
-COPY ./app /code/app
+COPY ./src /code/src
 
 # Ensure data and db directories exist and are owned by the new user
 RUN mkdir -p /code/data /code/chroma_db && \
@@ -27,4 +27,4 @@ USER aegis
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "aegisdesk.app.main:app", "--host", "0.0.0.0", "--port", "8000"]

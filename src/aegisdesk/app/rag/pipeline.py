@@ -72,7 +72,7 @@ async def async_get_router() -> tuple[TextEmbedding, np.ndarray, list[dict]]:
                     
                 # Dynamic few-shot examples from DB
                 try:
-                    from app.memory.graph_store import graph_db
+                    from aegisdesk.app.memory.graph_store import graph_db
                     examples = await graph_db.get_routing_examples()
                     for ex in examples:
                         corpus.append(ex["query"])
@@ -225,3 +225,4 @@ async def _with_retries(runnable, inputs, max_attempts=3):
                 raise e
             logger.warning(f"RateLimitError encountered. Retrying in {2 ** attempt}s...")
             await asyncio.sleep(2 ** attempt)
+

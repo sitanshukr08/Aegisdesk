@@ -146,13 +146,12 @@ A `typer`-powered, `Rich`-rendered interactive CLI for headless server deploymen
 
 ```
 AegisDesk/
-├── app/
-│   ├── api/                  # FastAPI endpoints (SSE streams, JWT auth, RBAC)
-│   ├── memory/               # SQLite Semantic Graph + context assemblers
-│   ├── rag/                  # LangGraph pipeline, graph definitions, reranking
-│   └── db/                   # ChromaDB vector store (Singleton-managed)
-│
 ├── src/aegisdesk/
+│   ├── app/                  
+│   │   ├── api/              # FastAPI endpoints (SSE streams, JWT auth, RBAC)
+│   │   ├── memory/           # SQLite Semantic Graph + context assemblers
+│   │   ├── rag/              # LangGraph pipeline, graph definitions, reranking
+│   │   └── db/               # ChromaDB vector store (Singleton-managed)
 │   ├── core/
 │   │   ├── tools.py          # Sanitized subprocess tooling
 │   │   ├── integration_tools.py  # Cloud & Atlassian integrations
@@ -278,7 +277,7 @@ aegisdesk ask "Can you ping the corporate gateway and check if my Okta token exp
 ### Run the API Server
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn aegisdesk.app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 The SSE endpoint will be available at `http://localhost:8000`. Authenticate with a JWT token and stream responses in real time.

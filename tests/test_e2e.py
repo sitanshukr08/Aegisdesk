@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.rag.pipeline import analyze_intent
+from aegisdesk.app.rag.pipeline import analyze_intent
 from aegisdesk.core.pipeline import execute_rag_pipeline
 
 
@@ -35,4 +35,5 @@ async def test_e2e_network_diagnostics_happy_path():
                 # 3. Assert the pipeline properly encapsulated the agent's answer
                 assert "pinged the gateway" in chunk["answer"]
                 break
+
 

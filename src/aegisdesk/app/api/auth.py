@@ -3,7 +3,7 @@ from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
-from app.services.auth_service import ACCESS_TOKEN_EXPIRE_MINUTES, USERS_DB, create_access_token
+from aegisdesk.app.services.auth_service import ACCESS_TOKEN_EXPIRE_MINUTES, USERS_DB, create_access_token
 
 router = APIRouter()
 

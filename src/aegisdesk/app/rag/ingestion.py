@@ -3,8 +3,8 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import Chroma
 
-from app.config.settings import settings
-from app.db.vector_store import get_embeds
+from aegisdesk.app.config.settings import settings
+from aegisdesk.app.db.vector_store import get_embeds
 
 
 def process_uploaded_file(file_path: str, filename: str) -> bool:

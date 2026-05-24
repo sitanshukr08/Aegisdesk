@@ -8,8 +8,8 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from app.config.settings import settings
-from app.db.vector_store import get_embeds
+from aegisdesk.app.config.settings import settings
+from aegisdesk.app.db.vector_store import get_embeds
 
 
 def process_file_to_chroma(file_path: str, filename: str) -> bool:

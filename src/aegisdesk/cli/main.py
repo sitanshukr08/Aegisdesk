@@ -206,7 +206,7 @@ def chat(
                 continue
                 
             async def run_pipeline():
-                from app.memory.extractor import extract_memory_background
+                from aegisdesk.app.memory.extractor import extract_memory_background
                 memory_task = asyncio.create_task(extract_memory_background(user, query))
                 
                 user_approval = None
@@ -299,7 +299,7 @@ def doctor():
 @app.command(name="memory-list")
 def memory_list(limit: int = typer.Option(50, help="Number of facts to list")):
     """Visualize the Semantic Graph Memory."""
-    from app.memory.graph_store import graph_db
+    from aegisdesk.app.memory.graph_store import graph_db
     
     console.print(f"\n[bold magenta]--- Semantic Graph Memory (Top {limit}) ---[/bold magenta]")
     
@@ -351,13 +351,13 @@ def teach_router(query: str, category: str, domain: str):
     
     Example: aegisdesk teach-router "Deploy to AWS" it_support cloud_integrations
     """
-    from app.memory.graph_store import graph_db
+    from aegisdesk.app.memory.graph_store import graph_db
     async def _run():
         try:
             await graph_db.add_routing_example(query, category, domain)
             console.print(f"[bold green]Successfully taught router:[/bold green] '{query}' -> {category}/{domain}")
             # Clear the singleton so it reloads from DB next time
-            from app.rag import pipeline
+            from aegisdesk.app.rag import pipeline
             pipeline._ROUTER_MODEL = None
         except Exception as e:
             console.print(f"[bold red]Failed to teach router:[/bold red] {e}")
@@ -372,3 +372,4 @@ def author():
 
 if __name__ == "__main__":
     app()
+

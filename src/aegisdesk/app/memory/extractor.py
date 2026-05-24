@@ -2,8 +2,8 @@ import json
 
 from langchain_groq import ChatGroq
 
-from app.config.settings import settings
-from app.memory.graph_store import graph_db
+from aegisdesk.app.config.settings import settings
+from aegisdesk.app.memory.graph_store import graph_db
 from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.memory")
@@ -49,3 +49,4 @@ async def extract_memory_background(user_id: str, text: str):
                 
     except Exception as e:
         logger.error(f"Failed to extract memory facts: {e}", exc_info=True)
+

@@ -1,6 +1,6 @@
 import time
 
-from app.rag.pipeline import analyze_intent
+from aegisdesk.app.rag.pipeline import analyze_intent
 
 
 def run_benchmark():
@@ -112,3 +112,4 @@ def run_benchmark():
 
 if __name__ == "__main__":
     run_benchmark()
+

@@ -8,7 +8,7 @@ from langchain_core.tools import tool
 from requests.adapters import HTTPAdapter
 from urllib3.util.connection import create_connection
 
-from app.config.settings import settings
+from aegisdesk.app.config.settings import settings
 from aegisdesk.observability.logger import get_logger
 
 logger = get_logger("aegisdesk.web_tools")
@@ -129,4 +129,5 @@ def search_internet(query: str) -> str:
         return f"Error searching internet: {str(e)}"
 
 WEB_SCRAPING_TOOLS = [scrape_web_page, search_internet]
+
 

@@ -86,7 +86,7 @@ class RecursiveContextAssembler:
 
         # 4. CROSS-ENCODER GRAPH RERANKING
         # Instead of just keyword matching, we semantically rank the graph paths!
-        from app.rag.retriever import get_reranker
+        from aegisdesk.app.rag.retriever import get_reranker
         
         # CRITICAL FIX: Cap the number of semantic reranking candidates to 50 to prevent Timeouts!
         candidate_list = list(candidates.values())[:50]

@@ -1,6 +1,6 @@
 import pytest
-from app.api.endpoints import get_cache_key
-from app.memory.graph_store import graph_db
+from aegisdesk.app.api.endpoints import get_cache_key
+from aegisdesk.app.memory.graph_store import graph_db
 
 @pytest.mark.asyncio
 async def test_stale_cache_stampede():
@@ -17,7 +17,7 @@ async def test_stale_cache_stampede():
     initial_key = get_cache_key(query, session_id, user_id)
     
     # Simulate caching the response
-    from app.api.endpoints import RESPONSE_CACHE
+    from aegisdesk.app.api.endpoints import RESPONSE_CACHE
     RESPONSE_CACHE[initial_key] = ["Initial Cached Response"]
     
     # 2. Assert the key hits the cache
@@ -32,3 +32,4 @@ async def test_stale_cache_stampede():
     # 5. Assert the dynamic caching mechanism recognized the state change
     assert initial_key != post_mutation_key, "Cache key did not mutate after state change!"
     assert post_mutation_key not in RESPONSE_CACHE, "System served a stale cache chunk!"
+

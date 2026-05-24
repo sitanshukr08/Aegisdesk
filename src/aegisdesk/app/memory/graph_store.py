@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
-from app.config.settings import settings
+from aegisdesk.app.config.settings import settings
 
 # Added 'status' column to memory_facts
 SCHEMA_SQL = """
@@ -336,7 +336,7 @@ graph_db = GraphMemoryStore(
     legacy_path=settings.graph_memory_legacy_path,
 )
 
-from app.memory.context_assembler import RecursiveContextAssembler
+from aegisdesk.app.memory.context_assembler import RecursiveContextAssembler
 
 context_assembler = RecursiveContextAssembler(
     graph_db,

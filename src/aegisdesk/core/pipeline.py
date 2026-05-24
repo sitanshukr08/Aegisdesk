@@ -6,8 +6,8 @@ import os
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from app.rag.graph import workflow
-from app.services.vision_service import analyze_screenshot
+from aegisdesk.app.rag.graph import workflow
+from aegisdesk.app.services.vision_service import analyze_screenshot
 from aegisdesk.observability.metrics import recorder
 
 
@@ -111,3 +111,4 @@ async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_
         recorder.stop_timer("langgraph_execution_time")
         recorder.record_custom("status", "success")
         recorder.flush(query)
+

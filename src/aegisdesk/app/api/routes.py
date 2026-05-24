@@ -2,9 +2,9 @@ import os
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 
-from app.models.schemas import QueryReq, QueryRes
-from app.rag.ingestion import process_uploaded_file
-from app.services.chat_service import process_user_query
+from aegisdesk.app.models.schemas import QueryReq, QueryRes
+from aegisdesk.app.rag.ingestion import process_uploaded_file
+from aegisdesk.app.services.chat_service import process_user_query
 
 router = APIRouter()
 

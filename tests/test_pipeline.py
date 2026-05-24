@@ -1,5 +1,5 @@
 import pytest
-from app.rag.pipeline import analyze_intent
+from aegisdesk.app.rag.pipeline import analyze_intent
 
 @pytest.mark.asyncio
 async def test_analyze_intent_semantic_matching():
@@ -53,7 +53,7 @@ async def test_tool_recursion_limit(monkeypatch):
         def with_config(self, *args, **kwargs):
             return self
 
-    with patch("app.rag.pipeline.get_llm", return_value=FakeLLM()):
+    with patch("aegisdesk.app.rag.pipeline.get_llm", return_value=FakeLLM()):
         
         with patch("aegisdesk.core.tools.run_cmd") as mock_tool:
             # Tool constantly returns transient error, forcing retry
@@ -70,4 +70,5 @@ async def test_tool_recursion_limit(monkeypatch):
             escalated = True
             
     assert escalated, "Pipeline did not gracefully escalate after hitting the tool recursion limit."
+
 
