@@ -1,8 +1,8 @@
 
 import asyncio
 
-import numpy as np
-from fastembed import TextEmbedding
+import asyncio
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from aegisdesk.core.integration_tools import CLOUD_INTEGRATION_TOOLS
@@ -37,83 +37,98 @@ INTENT_CLASSES = [
     },
 ]
 
-_ROUTER_MODEL: TextEmbedding | None = None
-_INTENT_VECTORS: np.ndarray | None = None
-_ROUTER_META: list[dict] | None = None
+from synaptoroute.router import AdaptiveRouter
+from synaptoroute.encoder import Encoder
+from synaptoroute.storage import SQLiteStorage
+from synaptoroute.models import Route
 
-def get_router():
-    # Deprecated sync wrapper, use async_get_router
-    pass
+_ROUTER: AdaptiveRouter | None = None
+_ROUTER_LOCK = asyncio.Lock()
 
-_ROUTER_LOCKS = {}
-
-def _load_intents_db():
-    corpus = []
-    meta = []
-    for item in INTENT_CLASSES:
-        corpus.append(item["keywords"])
-        meta.append({"category": item["category"], "domain": item["domain"]})
-    return corpus, meta
-
-async def async_get_router() -> tuple[TextEmbedding, np.ndarray, list[dict]]:
-    global _ROUTER_MODEL, _INTENT_VECTORS, _ROUTER_META, _ROUTER_LOCKS
-    loop = asyncio.get_running_loop()
-    if loop not in _ROUTER_LOCKS:
-        _ROUTER_LOCKS[loop] = asyncio.Lock()
-        
-    if _ROUTER_META is None:
-        async with _ROUTER_LOCKS[loop]:
-            if _ROUTER_META is None:
-                logger.info("Loading FastEmbed model for semantic routing...")
-                model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
+async def async_get_router() -> AdaptiveRouter:
+    global _ROUTER
+    
+    if _ROUTER is None:
+        async with _ROUTER_LOCK:
+            if _ROUTER is None:
+                logger.info("Initializing SynaptoRoute for semantic routing...")
                 
-                # Base static corpus
-                corpus, meta = _load_intents_db()
+                # Setup Encoder and Storage
+                encoder = Encoder(model_name="BAAI/bge-small-en-v1.5")
+                import os
+                os.makedirs("data", exist_ok=True)
+                storage = SQLiteStorage("data/synaptoroute.sqlite")
+                
+                router = AdaptiveRouter(encoder, storage)
+                
+                # Load static intents into router
+                for idx, item in enumerate(INTENT_CLASSES):
+                    route = Route(
+                        name=f"static_route_{idx}",
+                        utterances=[item["keywords"]],
+                        threshold=0.45,
+                        metadata={"category": item["category"], "domain": item["domain"]}
+                    )
+                    router.add_route(route)
                     
-                # Dynamic few-shot examples from DB
+                # Load dynamic few-shot examples from DB
                 try:
                     from aegisdesk.app.memory.graph_store import graph_db
                     examples = await graph_db.get_routing_examples()
+                    
+                    # Group examples by category/domain to create consolidated routes
+                    dynamic_routes = {}
                     for ex in examples:
-                        corpus.append(ex["query"])
-                        meta.append({"category": ex["category"], "domain": ex["domain"]})
+                        cat = ex["category"]
+                        dom = ex["domain"]
+                        key = f"dynamic_{cat}_{dom}"
+                        if key not in dynamic_routes:
+                            dynamic_routes[key] = {"utterances": [], "meta": {"category": cat, "domain": dom}}
+                        dynamic_routes[key]["utterances"].append(ex["query"])
+                        
+                    for key, data in dynamic_routes.items():
+                        route = Route(
+                            name=key,
+                            utterances=data["utterances"],
+                            threshold=0.45,
+                            metadata=data["meta"]
+                        )
+                        router.add_route(route)
                 except Exception as e:
                     logger.error(f"Failed to load dynamic routing examples: {e}")
-                    
-                _ROUTER_MODEL = model
-                _INTENT_VECTORS = np.array(list(_ROUTER_MODEL.embed(corpus)))
-                _ROUTER_META = meta
-    return _ROUTER_MODEL, _INTENT_VECTORS, _ROUTER_META
+                
+                await router.start()
+                _ROUTER = router
+                
+    return _ROUTER
+
+async def shutdown_router():
+    global _ROUTER
+    if _ROUTER is not None:
+        await _ROUTER.stop()
 
 async def analyze_intent(query: str, history: list) -> dict:
-    """Classifies the query offline using SentenceTransformer (Zero-Token)."""
+    """Classifies the query offline using SynaptoRoute."""
     try:
         # Hardcoded direct answers
         q_lower = query.lower()
         if "who" in q_lower and ("aegisdesk" in q_lower or "made" in q_lower or "developed" in q_lower or "created" in q_lower or "author" in q_lower):
             return {"category": "it_support", "domain": "web_scraping", "direct_response": None}
             
-        # Semantic Routing using Singleton Model
-        model, intent_vectors, router_meta = await async_get_router()
-        query_vec = np.array(list(model.embed([q_lower])))
-        
-        # Calculate cosine similarity manually since vectors are normalized by default
-        from sklearn.metrics.pairwise import cosine_similarity
-        similarities = cosine_similarity(query_vec, intent_vectors).flatten()
-        best_match_idx = int(np.argmax(similarities))
+        # Semantic Routing using SynaptoRoute
+        router = await async_get_router()
+        match = await router.aquery(q_lower)
         
         # Fallback if query doesn't match any known vectors strongly
-        if similarities[best_match_idx] < 0.45:
+        if not match:
             return {"category": "it_support", "domain": "general", "direct_response": None}
             
-        match = router_meta[best_match_idx]
-        
         direct_resp = None
-        if match["category"] == "greeting":
+        if match.metadata and match.metadata.get("category") == "greeting":
             try:
                 from aegisdesk.core.llm_factory import get_llm
                 llm = get_llm(temperature=0.7, tier="synthesis")
-                res = llm.invoke([
+                res = await llm.ainvoke([
                     ("system", "You are AegisDesk, an elite autonomous IT assistant. The user is chatting or asking what you do. Respond naturally and briefly explain your capabilities (resolving IT tickets, network diagnostics, etc). Keep it to 1-2 short sentences. Do not be overly robotic."),
                     ("human", query)
                 ])
@@ -121,13 +136,17 @@ async def analyze_intent(query: str, history: list) -> dict:
             except Exception:
                 direct_resp = "Hello! I am AegisDesk, your autonomous IT assistant. How can I help you today?"
         
-        return {"category": match["category"], "domain": match["domain"], "direct_response": direct_resp}
+        return {
+            "category": match.metadata.get("category", "it_support"), 
+            "domain": match.metadata.get("domain", "general"), 
+            "direct_response": direct_resp
+        }
         
     except Exception as e:
         logger.error(f"Offline Intent Routing Failed: {e}", exc_info=True)
         return {"category": "it_support", "domain": "general", "direct_response": None}
     
-def expand_query(query: str, history: list) -> str:
+async def expand_query(query: str, history: list) -> str:
     """Uses chat history to create a context-aware standalone English search query."""
     try:
         recent = history[-4:] if history else []
@@ -141,7 +160,7 @@ def expand_query(query: str, history: list) -> str:
         Based on the history, translate and expand the user's latest Hinglish/informal query into a standalone, concise English IT search query. 
         Output ONLY the expanded English query."""
         
-        res = llm.invoke([("system", sys_msg), ("human", query)])
+        res = await llm.ainvoke([("system", sys_msg), ("human", query)])
         return res.content.strip()
     except Exception:
         return query
@@ -150,8 +169,12 @@ async def get_network_answer(query: str, context: str, history: list):
     """Network Diagnostic Sub-Agent"""
     try:
         llm = get_llm(temperature=0.0, tier="fast").bind_tools(IT_SUPPORT_TOOLS)
+        sys_msg = f"""You are the AegisDesk Network Diagnostics Agent. You have tools to run Windows OS commands. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. If the history contains a ToolMessage with the command output, you MUST provide the final answer to the user based on that output. DO NOT call the exact same tool again.
+        
+Knowledge Base Context (use if relevant):
+{context}"""
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Network Diagnostics Agent. You have tools to run Windows OS commands. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. If the history contains a ToolMessage with the command output, you MUST provide the final answer to the user based on that output. DO NOT call the exact same tool again."),
+            ("system", sys_msg),
             MessagesPlaceholder(variable_name="history")
         ])
         return await _with_retries(prompt | llm, {"history": history})
@@ -162,8 +185,12 @@ async def get_cloud_answer(query: str, context: str, history: list):
     """Cloud Integrations Sub-Agent"""
     try:
         llm = get_llm(temperature=0.0, tier="fast").bind_tools(CLOUD_INTEGRATION_TOOLS)
+        sys_msg = f"""You are the AegisDesk Cloud Operations Agent. You manage Jira, Slack, and Okta via APIs. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags.
+        
+Knowledge Base Context (use if relevant):
+{context}"""
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Cloud Operations Agent. You manage Jira, Slack, and Okta via APIs. Keep your answers brief. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
+            ("system", sys_msg),
             MessagesPlaceholder(variable_name="history")
         ])
         return await _with_retries(prompt | llm, {"history": history})
@@ -174,8 +201,12 @@ async def get_web_answer(query: str, context: str, history: list):
     """Web Scraping Sub-Agent"""
     try:
         llm = get_llm(temperature=0.0, tier="fast").bind_tools(WEB_SCRAPING_TOOLS)
+        sys_msg = f"""You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags.
+        
+Knowledge Base Context (use if relevant):
+{context}"""
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are the AegisDesk Web Research Agent. Use your search tools to search the internet or scrape webpages to solve the user's problem. Use the native tool_calls API directly. Do not describe what you are about to do. When invoking a tool, you MUST use the native JSON tool call format. DO NOT use XML <function> tags."),
+            ("system", sys_msg),
             MessagesPlaceholder(variable_name="history")
         ])
         return await _with_retries(prompt | llm, {"history": history})

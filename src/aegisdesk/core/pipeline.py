@@ -9,10 +9,28 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from aegisdesk.app.rag.graph import workflow
 from aegisdesk.app.services.vision_service import analyze_screenshot
 from aegisdesk.observability.metrics import recorder
+from aegisdesk.observability.logger import get_logger
+
+logger = get_logger("aegisdesk.pipeline")
 
 import asyncio
 import time
 from collections import deque
+
+_GLOBAL_CONN = None
+_APP_GRAPH = None
+
+async def get_app_graph():
+    global _GLOBAL_CONN, _APP_GRAPH
+    if _APP_GRAPH is None:
+        import aiosqlite
+        os.makedirs("data", exist_ok=True)
+        _GLOBAL_CONN = await aiosqlite.connect("data/checkpoints.sqlite", timeout=30, check_same_thread=False)
+        await _GLOBAL_CONN.execute("PRAGMA journal_mode=WAL")
+        memory = AsyncSqliteSaver(_GLOBAL_CONN)
+        _APP_GRAPH = workflow.compile(checkpointer=memory, interrupt_before=["dangerous_tools"])
+    return _APP_GRAPH
+
 
 # Global Throttle: Never execute more than 10 LangGraph pipelines simultaneously
 PIPELINE_THROTTLE = asyncio.Semaphore(10)
@@ -66,8 +84,7 @@ async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_
                 recorder.flush(query)
                 return
     except Exception as e:
-        from aegisdesk.observability.logger import get_logger
-        get_logger("aegisdesk.pipeline").warning(f"Semantic Cache Error: {e}")
+        logger.warning(f"Semantic Cache Error: {e}")
 
     # 2. Tier 3: Concurrency Throttle & RPM Sliding Window
     if PIPELINE_THROTTLE.locked() or len(pipeline_timestamps) == MAX_PIPELINES_PER_MINUTE:
@@ -86,28 +103,22 @@ async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_
         pipeline_timestamps.append(time.time())
         
         config = {"configurable": {"thread_id": session_id}, "callbacks": callbacks or []}
-        os.makedirs("data", exist_ok=True)
         
         try:
             final_state = None
             
-            import aiosqlite
-            async with aiosqlite.connect("data/checkpoints.sqlite", timeout=30, check_same_thread=False) as conn:
-                await conn.execute("PRAGMA journal_mode=WAL")
-                memory = AsyncSqliteSaver(conn)
-                # Compile the graph with Tier 3 Selective Interrupts
-                app_graph = workflow.compile(checkpointer=memory, interrupt_before=["dangerous_tools"])
-                
-                if user_approval is not None:
-                    if user_approval:
-                        stream = app_graph.astream(None, config=config)
-                    else:
-                        yield {"type": "content", "msg": "\n[bold red]Action Cancelled by User.[/bold red]"}
-                        return
+            app_graph = await get_app_graph()
+            
+            if user_approval is not None:
+                if user_approval:
+                    stream = app_graph.astream(None, config=config)
                 else:
-                    stream = app_graph.astream(initial_state, config=config)
-                
-                # Stream the Agent's Node Transitions
+                    yield {"type": "content", "msg": "\n[bold red]Action Cancelled by User.[/bold red]"}
+                    return
+            else:
+                stream = app_graph.astream(initial_state, config=config)
+            
+            # Stream the Agent's Node Transitions
                 async for output in stream:
                     for node_name, state_update in output.items():
                         # Extract the LLM's explanation and tool intentions for transparency!
@@ -156,7 +167,6 @@ async def execute_rag_pipeline(query: str, user_id: str, session_id: str, image_
                 
                 # Write to Semantic Cache
                 try:
-                    import time
                     from aegisdesk.app.db.vector_store import get_cache_db
                     cache_db = get_cache_db()
                     await cache_db.aadd_texts(

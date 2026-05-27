@@ -66,9 +66,8 @@ async def prepare_query_node(state: AgentState):
         update["messages"] = [("assistant", update["direct_response"])]
         return update
         
-    # If it needs retrieval (not a direct answer or escalate)
     if update["intent_category"] not in ["greeting", "out_of_scope", "direct_answer", "escalate"]:
-        expanded = expand_query(state["query"], state.get("messages", []))
+        expanded = await expand_query(state["query"], state.get("messages", []))
         ctx, conf = await get_context(state["user_id"], state["query"], expanded)
         update["expanded_query"] = expanded
         update["context"] = ctx

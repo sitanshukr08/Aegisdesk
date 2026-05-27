@@ -10,7 +10,7 @@ logger = get_logger("aegisdesk.tools")
 def sanitize_input(value: str) -> str:
     """Strictly prevents shell metacharacter injection and destructive commands."""
     # Tier 1: Metacharacter Blocking
-    if re.search(r'[&|;<>`$]', value):
+    if re.search(r'[&|;<>`$\n\r\(\){}"\']', value):
         raise ValueError(f"Security Alert: Blocked illegal shell characters in input: {value}")
         
     # Tier 1: Destructive Command Denylist
@@ -119,8 +119,8 @@ def start_process(executable_name: str) -> str:
     """Use this to start or restart an application by its executable name (e.g. 'spotify.exe' or 'notepad.exe')."""
     try:
         safe_name = sanitize_input(executable_name)
-        # Using powershell Start-Process to launch it in the background
-        return run_cmd(["powershell", "-Command", f"Start-Process {safe_name} -ErrorAction Stop; 'Successfully started {safe_name}'"])
+        # Using powershell Start-Process safely without string interpolation
+        return run_cmd(["powershell", "-NoProfile", "-Command", "Start-Process", safe_name, "-ErrorAction", "Stop"])
     except Exception as e:
         return str(e)
 

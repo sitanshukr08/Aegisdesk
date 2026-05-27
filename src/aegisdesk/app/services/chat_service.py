@@ -45,7 +45,7 @@ async def process_user_query(session_id: str, user_id: str, raw_q: str):
         yield {"chunk": f"I apologize for the frustration. I am escalating your case to a human agent immediately. Your ticket reference is {meta['ticket_id']}.", "meta": meta}
         return
 
-    expanded_q = expand_query(session_id, clean_q)
+    expanded_q = await expand_query(session_id, clean_q)
     print(f"[EXPANDER] Expanded: {expanded_q}")
     
     ctx, conf = get_context(user_id, clean_q, expanded_q)

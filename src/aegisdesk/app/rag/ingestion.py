@@ -33,7 +33,7 @@ def process_uploaded_file(file_path: str, filename: str) -> bool:
             documents=chunks,
             embedding=embeds,
             client=client,
-            collection_name="it_support_kb",
+            collection_name="hcltech_knowledge_base",
             collection_metadata={"hnsw:space": "cosine"}
         )
         return True

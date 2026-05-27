@@ -27,7 +27,7 @@ def get_llm(temperature: float = 0.0, response_format: dict = None, tier: Litera
     openai_model = getattr(settings, "openai_model", "gpt-4o-mini")
     
     if tier == "fast":
-        groq_model = "llama-3-8b-instant"
+        groq_model = "llama-3.1-8b-instant"
     elif tier == "synthesis":
         groq_model = "llama-3.1-70b-versatile"
         openai_model = "gpt-4o"
@@ -38,7 +38,7 @@ def get_llm(temperature: float = 0.0, response_format: dict = None, tier: Litera
             from langchain_google_genai import ChatGoogleGenerativeAI
             providers.append(ChatGoogleGenerativeAI(
                 api_key=settings.gemini_api_key,
-                model=getattr(settings, "google_model", "gemini-1.5-flash"),
+                model=getattr(settings, "google_model", "gemini-2.0-flash"),
                 max_retries=0,
                 **kwargs
             ))
@@ -88,6 +88,12 @@ def get_llm(temperature: float = 0.0, response_format: dict = None, tier: Litera
             import openai
             exceptions.append(openai.RateLimitError)
             exceptions.append(openai.InternalServerError)
+        except ImportError:
+            pass
+        try:
+            from google.api_core.exceptions import ResourceExhausted, InternalServerError
+            exceptions.append(ResourceExhausted)
+            exceptions.append(InternalServerError)
         except ImportError:
             pass
             

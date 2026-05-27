@@ -3,7 +3,7 @@ import time
 from aegisdesk.app.rag.pipeline import analyze_intent
 
 
-def run_benchmark():
+async def run_benchmark():
     test_cases = [
         # Network
         ("Can you ping 192.168.1.1?", "it_support", "network_diagnostics"),
@@ -71,7 +71,7 @@ def run_benchmark():
     start_time = time.time()
     
     # Warmup the ONNX model to avoid cold start penalty
-    analyze_intent("Warmup query", [])
+    await analyze_intent("Warmup query", [])
     
     print("🚀 Starting AegisDesk Semantic Router Benchmark...")
     print("=" * 60)
@@ -80,7 +80,7 @@ def run_benchmark():
     
     for query, expected_category, expected_domain in test_cases:
         t0 = time.perf_counter()
-        res = analyze_intent(query, [])
+        res = await analyze_intent(query, [])
         t1 = time.perf_counter()
         
         latency = (t1 - t0) * 1000
@@ -111,5 +111,6 @@ def run_benchmark():
     print("Token Cost    : $0.00 (100% Local Inference)")
 
 if __name__ == "__main__":
-    run_benchmark()
+    import asyncio
+    asyncio.run(run_benchmark())
 

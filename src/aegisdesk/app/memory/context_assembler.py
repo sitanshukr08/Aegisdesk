@@ -94,7 +94,8 @@ class RecursiveContextAssembler:
         
         try:
             reranker = get_reranker()
-            raw_scores = list(reranker.rerank(normalized_query, docs))
+            import asyncio
+            raw_scores = await asyncio.to_thread(lambda: list(reranker.rerank(normalized_query, docs)))
             probabilities = 1 / (1 + np.exp(-np.array(raw_scores)))
             
             # print("\n--- GRAPH SEMANTIC SCORES ---")
